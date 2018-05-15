@@ -1,5 +1,5 @@
-# Ethereum Monitoring Node (EMD)
-EMD is a Ethereum network behavior monitoring client based on the official Go-lang implementation.
+# Ethereum Monitoring Client (EMC)
+EMC is an Ethereum network behavior monitoring client based on the official Go-lang implementation.
 
 - **This project is at a very early stage of development.**
 
@@ -7,8 +7,8 @@ EMD is a Ethereum network behavior monitoring client based on the official Go-la
 
 - Temporarily - for development purposes - we provide two subsidiary scripts: __deploy_net.sh__ and __run_instance.sh__. Below, one can find instructions how to run them.
 
-##### Private Network Deployment Script
-- To deploy a private network with <n> clients run:
+### Private Network Deployment Script
+- To deploy a private network with \<n\> clients run:
 ```sh
 sh deploy_net.sh <n>
 ```
@@ -19,7 +19,7 @@ sh deploy_net.sh 3
 - This script expects exactly one integer parameter (1 - 10) which represents the number of Geth instances to be deployed.
 - It initializes for each Geth instance a separate data directory to store the network state and loads a (configured) genesis block.
 
-##### Running a Geth Instance
+### Running a Geth Instance
 If you have deployed a private network of 3 nodes and want to run them all; first, open 3 terminals.
 - In each terminal, run:
 ```sh
@@ -29,10 +29,10 @@ $sh run_client.sh <m>
 
 
 
-### Geth Console Use-Cases
-The *run_client.sh* command should open a Geth console. In the following text, we refer to n-th Console as (C<n>).
+## Geth Console Use-Cases
+The *run_client.sh* command should open a Geth console. In the following text, we refer to n-th Console as (C\<n\>).
 
-##### Peers Interconnection
+#### Peers Interconnection
 In the official public Ethereum network, there are boot-strap nodes that help find other peers to connect to. In a private network, it is needed to do this manually.
 
 - Get the "enode" identifier of Client 1:
@@ -53,7 +53,7 @@ In the official public Ethereum network, there are boot-strap nodes that help fi
 
 
 
-##### Account Creation and Mining
+#### Account Creation and Mining
 
 - Create a new account on Client two with password "testing".
 ```
@@ -70,14 +70,14 @@ In the official public Ethereum network, there are boot-strap nodes that help fi
 (C2) > miner.start(1)
 ```
 
-##### Check Balance
+#### Check Balance
 - Check the account balance of the accounts[0] on the Client Two.
 ```
 (C2) > primary = eth.accounts[0]
 (C2) > balance = web3.fromWei(eth.getBalance(primary), "ether");
 ```
 
-##### Sending Transactions
+#### Sending Transactions
 
 Send 6.23 Ethers from an account that exists on the current session (if you followed the previous steps, it should work).
 ```

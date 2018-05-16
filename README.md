@@ -43,7 +43,7 @@ In the official public Ethereum network, there are boot-strap nodes that help fi
 
 - Connect Client 2 to Client 1:
 ```
-(C2) > admin.addPeer("enode://0e409a08482fcd8390797422438a0e3f909ba93cc925675e6fce6221be49b7666f0b2f6106e1b5936aa96c0ca59c8d9b1d7f642657dfa842eb88c8a66c70655b@[::]:30302?discport=0")
+(C2) > admin.addPeer("enode://0e409a08482fcd8390797422438a0e3f909ba93cc925675e6fce6221be49b7666f0b2f6106e1b5936aa96c0ca59c8d9b1d7f642657dfa842eb88c8a66c70655b@[::]:30301?discport=0")
 ```
 - Check that connecting was successful.
 ```

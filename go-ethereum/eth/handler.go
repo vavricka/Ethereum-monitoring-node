@@ -641,6 +641,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			trueHead = request.Block.ParentHash()
 			trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
 		)
+
+		// EMC - 5.12 Block announcement reception redundancy
+		log.Debug("EMC-NewBlockMsg", "hash", request.Block.Hash())
+		// EMC - 5.12 Block announcement reception redundancy  --- END
+
 		// Update the peers total difficulty if better than the previous
 		if _, td := p.Head(); trueTD.Cmp(td) > 0 {
 			p.SetHead(trueHead, trueTD)
@@ -669,6 +674,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if tx == nil {
 				return errResp(ErrDecode, "transaction %d is nil", i)
 			}
+
+			// EMC - 5.11 Transaction reception redundancy
+			log.Debug("EMC-NewTxMsg", "hash", tx.Hash())
+			// EMC - 5.11 Transaction reception redundancy  --- END
+
 			p.MarkTransaction(tx.Hash())
 		}
 		pm.txpool.AddRemotes(txs)

@@ -22,6 +22,7 @@ export GETH="$PROJ_ROOT/go-ethereum"
 
 if [[ -d "$DATA_PATH" ]]; then
 	rm -rf "$DATA_PATH"
+	sleep 1
 fi
 
 while [ $NUM_CLIENTS -ge 1 ]; do

@@ -1,8 +1,12 @@
 #!/bin/bash
 #set -x
 
+#1 - ON | 0 - OFF
+LOG_TO_FILE=1
+
 # The NETWORK_ID must be the same as in genesis.json
 NETWORK_ID=19990022
+
 
 # Check the number of parameters.
 if [ $# -ne 1 ]; then
@@ -31,7 +35,15 @@ fi
 
 export GETH="$PROJ_ROOT/go-ethereum"
 
+
 # RUN the client in console mode.
-"$GETH/build/bin/geth" --identity "INESC-ID-Node-$CLIENT_NUMBER" --datadir \
-"$DATA_PATH/$CLIENT_NUMBER" --ipcdisable --port "3030$CLIENT_NUMBER" --nodiscover \
---networkid $NETWORK_ID --cache=64 console
+if [ $LOG_TO_FILE -eq 1 ]; then
+	"$GETH/build/bin/geth" --identity "INESC-ID-Node-$CLIENT_NUMBER" --datadir \
+	"$DATA_PATH/$CLIENT_NUMBER" --ipcdisable --port "3030$CLIENT_NUMBER" --nodiscover \
+	--networkid $NETWORK_ID --cache=64 --verbosity 6 console 2>> "$DATA_PATH/$CLIENT_NUMBER/out.log"
+else
+	"$GETH/build/bin/geth" --identity "INESC-ID-Node-$CLIENT_NUMBER" --datadir \
+	"$DATA_PATH/$CLIENT_NUMBER" --ipcdisable --port "3030$CLIENT_NUMBER" --nodiscover \
+	--networkid $NETWORK_ID --cache=64 console
+fi
+

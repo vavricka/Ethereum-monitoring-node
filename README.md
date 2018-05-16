@@ -10,11 +10,11 @@ EMC is an Ethereum network behavior monitoring client based on the official Go-l
 ### Private Network Deployment Script
 - To deploy a private network with \<n\> clients run:
 ```sh
-sh deploy_net.sh <n>
+$bash deploy_net.sh <n>
 ```
 - e.g.
 ```sh
-sh deploy_net.sh 3
+$bash deploy_net.sh 3
 ```
 - This script expects exactly one integer parameter (1 - 10) which represents the number of Geth instances to be deployed.
 - It initializes for each Geth instance a separate data directory to store the network state and loads a (configured) genesis block.
@@ -23,7 +23,7 @@ sh deploy_net.sh 3
 If you have deployed a private network of 3 nodes and want to run them all; first, open 3 terminals.
 - In each terminal, run:
 ```sh
-$sh run_client.sh <m>
+$bash run_client.sh <m>
 ```
 - For m: <1,3>
 

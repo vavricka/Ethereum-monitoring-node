@@ -6,7 +6,7 @@
         "eip158Block": 0
     },
     "nonce"      : "0x0ea30c0df00d001f",
-    "difficulty": "400",
+    "difficulty": "131472",
     "gasLimit": "2100000",
     "alloc": {}
 }

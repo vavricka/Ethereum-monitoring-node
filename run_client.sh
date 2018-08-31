@@ -2,16 +2,24 @@
 #set -x
 
 #1 - ON | 0 - OFF
-LOG_TO_FILE=1
+#LOG_TO_FILE=0
 
 # The NETWORK_ID must be the same as in genesis.json
-NETWORK_ID=19990022
-
+NETWORK_ID=19990522
 
 # Check the number of parameters.
-if [ $# -ne 1 ]; then
-    printf "ERROR: This scripts expects one parameter:\n\
-    run_client.sh <client number>\n"
+if [ $# -eq 2 ]; then
+	LOG_TO_FILE="$2"
+	if [ "$LOG_TO_FILE" -lt 0 ] || [ "$LOG_TO_FILE" -gt 1 ]; then
+        	printf "ERROR: DBG parameter must be 0 or 1\n"
+        	exit 1
+	fi
+
+elif [ $# -eq 1 ]; then
+	LOG_TO_FILE=0
+else
+    printf "ERROR: This scripts expects one or two parameters:\n\
+    run_client.sh CLIENT-NUM [DBG] \n"
     exit 1
 fi
 
@@ -35,12 +43,11 @@ fi
 
 export GETH="$PROJ_ROOT/go-ethereum"
 
-
 # RUN the client in console mode.
 if [ $LOG_TO_FILE -eq 1 ]; then
 	"$GETH/build/bin/geth" --identity "INESC-ID-Node-$CLIENT_NUMBER" --datadir \
 	"$DATA_PATH/$CLIENT_NUMBER" --ipcdisable --port "3030$CLIENT_NUMBER" --nodiscover \
-	--networkid $NETWORK_ID --cache=64 --verbosity 6 console 2>> "$DATA_PATH/$CLIENT_NUMBER/out.log"
+	--networkid $NETWORK_ID --cache=64 --verbosity 6 console 2>> "$DATA_PATH/$CLIENT_NUMBER/geth-out.log"
 else
 	"$GETH/build/bin/geth" --identity "INESC-ID-Node-$CLIENT_NUMBER" --datadir \
 	"$DATA_PATH/$CLIENT_NUMBER" --ipcdisable --port "3030$CLIENT_NUMBER" --nodiscover \

@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 
 # Check number of parameters.
 if [ $# -ne 1 ]; then

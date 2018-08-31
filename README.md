@@ -1,10 +1,15 @@
 # Ethereum Monitoring Client (EMC)
 EMC is an Ethereum network behavior monitoring client based on the official Go-lang implementation.
 
-- **This project is at a very early stage of development.**
-
-- List of functionalities will be continuously extended.
-
+## Run on the main net
+```sh
+$bash run_on_MAINNET.sh
+```
+## Run on the Rinkeby tesnet
+```sh
+$bash run_on_RINKEBY.sh
+```
+## Run on a private local network
 - Temporarily - for development purposes - we provide two subsidiary scripts: __deploy_net.sh__ and __run_instance.sh__. Below, one can find instructions how to run them.
 
 ### Private Network Deployment Script

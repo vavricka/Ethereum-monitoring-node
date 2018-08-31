@@ -20,8 +20,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	syslog "log/syslog"
 	"math"
 	"math/big"
+	"os"
+	"runtime"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -91,6 +95,21 @@ type ProtocolManager struct {
 	quitSync    chan struct{}
 	noMorePeers chan struct{}
 
+	//StatusMsg          = (0)   [0x00] via eth/protocol.go
+	//NewBlockHashesMsg  = (1)   [0x01]
+	//TxMsg              = (2)   [0x02]
+	//GetBlockHeadersMsg = (3)   [0x03]
+	//BlockHeadersMsg    = (4)   [0x04]
+	//GetBlockBodiesMsg  = (5)   [0x05]
+	//BlockBodiesMsg     = (6)   [0x06]
+	//NewBlockMsg        = (7)   [0x07]
+
+	logNewBlockHashesMsg log.Logger //1
+	logTxMsg             log.Logger //2
+	//logBlockHeadersMsg	log.Logger	//4
+	//logBlockBodiesMsg		log.Logger	//6
+	logNewBlockMsg log.Logger //7
+
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
 	wg sync.WaitGroup
@@ -112,6 +131,44 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		txsyncCh:    make(chan *txsync),
 		quitSync:    make(chan struct{}),
 	}
+
+	// EMC Logger
+	manager.logNewBlockMsg = log.New()
+	manager.logTxMsg = log.New()
+	manager.logNewBlockHashesMsg = log.New()
+	//manager.logBlockHeadersMsg = log.New()
+	//manager.logBlockBodiesMsg = log.New()
+
+	var handlerNewBlockMsg log.Handler
+	handlerNewBlockMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL7, "EMC-GETH", log.EmcFormat(false))
+	manager.logNewBlockMsg.SetHandler(handlerNewBlockMsg)
+
+	var handlerTxMsg log.Handler
+	handlerTxMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL2, "EMC-GETH", log.EmcFormat(false))
+	manager.logTxMsg.SetHandler(handlerTxMsg)
+
+	var handlerNewBlockHashesMsg log.Handler
+	handlerNewBlockHashesMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL1, "EMC-GETH", log.EmcFormat(false))
+	manager.logNewBlockHashesMsg.SetHandler(handlerNewBlockHashesMsg)
+
+	//var handlerBlockHeadersMsg log.Handler
+	//handlerBlockHeadersMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL4, "EMC-GETH", log.EmcFormat(false))
+	//manager.logBlockHeadersMsg.SetHandler(handlerBlockHeadersMsg)
+
+	//var handlerBlockBodiesMsg log.Handler
+	//handlerBlockBodiesMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL6, "EMC-GETH", log.EmcFormat(false))
+	//manager.logBlockBodiesMsg.SetHandler(handlerBlockBodiesMsg)
+
+	// DBG TMP logger !!!!!!!!!! - (STDout - for local (OSX) testing)
+	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(true))
+	if runtime.GOOS == "darwin" { // OSX - local ...
+		manager.logNewBlockMsg.SetHandler(handlerOSX)
+		manager.logTxMsg.SetHandler(handlerOSX)
+		manager.logNewBlockHashesMsg.SetHandler(handlerOSX)
+		//manager.logBlockHeadersMsg.SetHandler(handlerOSX)
+		//manager.logBlockBodiesMsg.SetHandler(handlerOSX)
+	}
+
 	// Figure out whether to allow fast sync or not
 	if mode == downloader.FastSync && blockchain.CurrentBlock().NumberU64() > 0 {
 		log.Warn("Blockchain not empty, fast sync disabled")
@@ -179,6 +236,24 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	manager.fetcher = fetcher.New(blockchain.GetBlockByHash, validator, manager.BroadcastBlock, heighter, inserter, manager.removePeer)
 
 	return manager, nil
+}
+
+func (pm *ProtocolManager) Log(msgType int) log.Logger {
+
+	switch msgType {
+	case NewBlockHashesMsg:
+		return pm.logNewBlockHashesMsg
+	case TxMsg:
+		return pm.logTxMsg
+	case NewBlockMsg:
+		return pm.logNewBlockMsg
+	//case BlockHeadersMsg:
+	//return pm.logBlockHeadersMsg
+	//case BlockBodiesMsg:
+	//	return pm.logBlockBodiesMsg
+	default:
+		panic("Invalid Log Handler")
+	}
 }
 
 func (pm *ProtocolManager) removePeer(id string) {
@@ -417,6 +492,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&headers); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+
+		//   4  -  BlockHeadersMsg  (tmp log..) --> not needed - as this type of msg
+		// is received after request GetBlockHeadersMsg ... (Newly propagated blocks
+		// are sent via msg-2 or msg-7)
+
+		//for _, header := range headers {
+		//	pm.Log(BlockHeadersMsg).Info(strconv.Itoa(BlockHeadersMsg),
+		//		"BLCK-HASH", header.Hash(),
+		//		"LocalTimestamp", time.Now())
+		//}
+
 		// If no headers were received, but we're expending a DAO fork check, maybe it's that
 		if len(headers) == 0 && p.forkDrop != nil {
 			// Possibly an empty reply to the fork header checks, sanity check TDs
@@ -500,6 +586,8 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Deliver them all to the downloader for queuing
 		transactions := make([][]*types.Transaction, len(request))
 		uncles := make([][]*types.Header, len(request))
+
+		// BLCK BODIES
 
 		for i, body := range request {
 			transactions[i] = body.Transactions
@@ -616,6 +704,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for _, block := range announces {
 			if !pm.blockchain.HasBlock(block.Hash, block.Number) {
 				unknown = append(unknown, block)
+
+				pm.Log(NewBlockHashesMsg).Info(strconv.Itoa(NewBlockHashesMsg),
+					"BlockHash", block.Hash,
+					"LocalTimestamp", msg.ReceivedAt) //more precise than time.Now())
+
 			}
 		}
 		for _, block := range unknown {
@@ -642,9 +735,40 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			trueTD   = new(big.Int).Sub(request.TD, request.Block.Difficulty())
 		)
 
-		// EMC - 5.12 Block announcement reception redundancy
-		log.Debug("EMC-NewBlockMsg", "hash", request.Block.Hash())
-		// EMC - 5.12 Block announcement reception redundancy  --- END
+		txs := request.Block.Transactions()
+		txs_str := ""
+		for _, transaction := range txs {
+			txhash := transaction.Hash().String()
+			txs_str = txs_str + txhash + ";"
+		}
+
+		uncles := request.Block.Uncles()
+		uncles_str := ""
+		for _, uncle := range uncles {
+			unclehash := uncle.Hash().String()
+			uncles_str = uncles_str + unclehash + ";"
+		}
+
+		pm.Log(NewBlockMsg).Info(strconv.Itoa(NewBlockMsg),
+			"BlockHash", request.Block.Hash(),
+			"LocalTimestamp", request.Block.ReceivedAt,
+			"Number", request.Block.Number(), // is is block number?
+			"GasLimit", request.Block.GasLimit(),
+			"GasUsed", request.Block.GasUsed(),
+			"Difficulty", request.Block.Difficulty(),
+			"Time", request.Block.Time(),
+			"Coinbase", request.Block.Coinbase(), // miner's addr
+			"ParentHash", request.Block.ParentHash(), // Parent block!
+			"UncleHash", request.Block.UncleHash(),
+			"BlockSize", request.Block.Size(),
+			"ListOfTxs", txs_str,
+			"ListOfUncles", uncles_str)
+		//"MixDigest", request.Block.MixDigest(),   // NO USAGE FOR US
+		//"Nonce", request.Block.Nonce(),			// NO USAGE FOR US
+		//"Bloom", request.Block.Bloom(),			// NO usage & BIG
+		//"Root", request.Block.Root(),				// stateRoot  - No usage..
+		//"TxHash", request.Block.TxHash(), 		// transaction trie’s root - No usage..
+		//"ReceiptHash", request.Block.ReceiptHash(), //receipt trie - No usage
 
 		// Update the peers total difficulty if better than the previous
 		if _, td := p.Head(); trueTD.Cmp(td) > 0 {
@@ -675,10 +799,28 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				return errResp(ErrDecode, "transaction %d is nil", i)
 			}
 
-			// EMC - 5.11 Transaction reception redundancy
-			log.Debug("EMC-NewTxMsg", "hash", tx.Hash())
-			// EMC - 5.11 Transaction reception redundancy  --- END
+			var msgType = ""
+			if tx.To() == nil {
+				msgType = "CC" // CONTRACT CREATION
+			} else if len(tx.Data()) > 0 {
+				msgType = "MC" // Message Call
+			} else {
+				msgType = "TX" // Transaction
+			}
 
+			pm.Log(TxMsg).Info(strconv.Itoa(TxMsg),
+				"Hash", tx.Hash(),
+				"LocalTimeStamp", msg.ReceivedAt,
+				"GasLimit", tx.Gas(), // Gas
+				"GasPrice", tx.GasPrice(),
+				"Value", tx.Value(), // amount
+				"Nonce", tx.Nonce(),
+				"MsgType", msgType,
+				"Cost", tx.Cost(),
+				"Size", tx.Size(),
+				"To", tx.To()) //,
+			//"Data", tx.Data()) // Too big and no usage...
+			// From ... Hard to get (&& no usage?)
 			p.MarkTransaction(tx.Hash())
 		}
 		pm.txpool.AddRemotes(txs)

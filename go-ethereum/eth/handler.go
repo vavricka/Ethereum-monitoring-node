@@ -25,7 +25,6 @@ import (
 	"math/big"
 	"os"
 	"runtime"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -105,7 +104,6 @@ type ProtocolManager struct {
 	//NewBlockMsg        = (7)   [0x07]
 
 	logNewBlockHashesMsg log.Logger //1
-	logTxMsg             log.Logger //2
 	//logBlockHeadersMsg	log.Logger	//4
 	//logBlockBodiesMsg		log.Logger	//6
 	logNewBlockMsg log.Logger //7
@@ -134,7 +132,6 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 
 	// EMC Logger
 	manager.logNewBlockMsg = log.New()
-	manager.logTxMsg = log.New()
 	manager.logNewBlockHashesMsg = log.New()
 	//manager.logBlockHeadersMsg = log.New()
 	//manager.logBlockBodiesMsg = log.New()
@@ -142,10 +139,6 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	var handlerNewBlockMsg log.Handler
 	handlerNewBlockMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL7, "EMC-GETH", log.EmcFormat(false))
 	manager.logNewBlockMsg.SetHandler(handlerNewBlockMsg)
-
-	var handlerTxMsg log.Handler
-	handlerTxMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL2, "EMC-GETH", log.EmcFormat(false))
-	manager.logTxMsg.SetHandler(handlerTxMsg)
 
 	var handlerNewBlockHashesMsg log.Handler
 	handlerNewBlockHashesMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL1, "EMC-GETH", log.EmcFormat(false))
@@ -160,10 +153,9 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	//manager.logBlockBodiesMsg.SetHandler(handlerBlockBodiesMsg)
 
 	// DBG TMP logger !!!!!!!!!! - (STDout - for local (OSX) testing)
-	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(true))
+	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
 	if runtime.GOOS == "darwin" { // OSX - local ...
 		manager.logNewBlockMsg.SetHandler(handlerOSX)
-		manager.logTxMsg.SetHandler(handlerOSX)
 		manager.logNewBlockHashesMsg.SetHandler(handlerOSX)
 		//manager.logBlockHeadersMsg.SetHandler(handlerOSX)
 		//manager.logBlockBodiesMsg.SetHandler(handlerOSX)
@@ -243,8 +235,6 @@ func (pm *ProtocolManager) Log(msgType int) log.Logger {
 	switch msgType {
 	case NewBlockHashesMsg:
 		return pm.logNewBlockHashesMsg
-	case TxMsg:
-		return pm.logTxMsg
 	case NewBlockMsg:
 		return pm.logNewBlockMsg
 	//case BlockHeadersMsg:
@@ -705,10 +695,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if !pm.blockchain.HasBlock(block.Hash, block.Number) {
 				unknown = append(unknown, block)
 
-				pm.Log(NewBlockHashesMsg).Info(strconv.Itoa(NewBlockHashesMsg),
-					"BlockHash", block.Hash,
-					"LocalTimestamp", msg.ReceivedAt) //more precise than time.Now())
-
+				pm.Log(NewBlockHashesMsg).Info("NewBlockHashesMsg",
+					"LocalTimestamp", msg.ReceivedAt,
+					"BlockHash", block.Hash)
 			}
 		}
 		for _, block := range unknown {
@@ -749,10 +738,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			uncles_str = uncles_str + unclehash + ";"
 		}
 
-		pm.Log(NewBlockMsg).Info(strconv.Itoa(NewBlockMsg),
-			"BlockHash", request.Block.Hash(),
+		pm.Log(NewBlockMsg).Info("NewBlockMsg",
 			"LocalTimestamp", request.Block.ReceivedAt,
-			"Number", request.Block.Number(), // is is block number?
+			"BlockHash", request.Block.Hash(),
+			"Number", request.Block.Number(),
 			"GasLimit", request.Block.GasLimit(),
 			"GasUsed", request.Block.GasUsed(),
 			"Difficulty", request.Block.Difficulty(),
@@ -799,31 +788,13 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				return errResp(ErrDecode, "transaction %d is nil", i)
 			}
 
-			var msgType = ""
-			if tx.To() == nil {
-				msgType = "CC" // CONTRACT CREATION
-			} else if len(tx.Data()) > 0 {
-				msgType = "MC" // Message Call
-			} else {
-				msgType = "TX" // Transaction
-			}
-
-			pm.Log(TxMsg).Info(strconv.Itoa(TxMsg),
-				"Hash", tx.Hash(),
-				"LocalTimeStamp", msg.ReceivedAt,
-				"GasLimit", tx.Gas(), // Gas
-				"GasPrice", tx.GasPrice(),
-				"Value", tx.Value(), // amount
-				"Nonce", tx.Nonce(),
-				"MsgType", msgType,
-				"Cost", tx.Cost(),
-				"Size", tx.Size(),
-				"To", tx.To()) //,
-			//"Data", tx.Data()) // Too big and no usage...
-			// From ... Hard to get (&& no usage?)
 			p.MarkTransaction(tx.Hash())
+
+			// TXS are Logged in tx_pool.go where they are verified as well
+			pm.txpool.AddRemoteEMC(tx, msg.ReceivedAt)
+
 		}
-		pm.txpool.AddRemotes(txs)
+		//pm.txpool.AddRemotes(txs)
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -149,6 +150,8 @@ func EmcFormat(usekeys bool) Format {
 		b := &bytes.Buffer{}
 		if usekeys {
 			fmt.Fprintf(b, "%s|", r.Msg)
+		} else if runtime.GOOS == "darwin" {
+			fmt.Fprintf(b, "%s|", r.Msg)
 		}
 		logfmtemc(b, r.Ctx, usekeys)
 		return b.Bytes()
@@ -189,6 +192,8 @@ func logfmtemc(buf *bytes.Buffer, ctx []interface{}, usekeys bool) {
 		buf.WriteString(v)
 	}
 	if usekeys {
+		buf.WriteByte('\n')
+	} else if runtime.GOOS == "darwin" {
 		buf.WriteByte('\n')
 	}
 }

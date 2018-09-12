@@ -196,7 +196,8 @@ type TxPool struct {
 	signer       types.Signer
 	mu           sync.RWMutex
 
-	logTx log.Logger
+	logTx        log.Logger
+	logBlockHead log.Logger
 
 	currentState  *state.StateDB      // Current state in the blockchain head
 	pendingState  *state.ManagedState // Pending state tracking virtual nonces
@@ -235,21 +236,28 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
 	}
-	pool.locals = newAccountSet(pool.signer)
-	pool.priced = newTxPricedList(&pool.all)
-	pool.reset(nil, chain.CurrentBlock().Header())
 
 	pool.logTx = log.New()
+	pool.logBlockHead = log.New()
 
 	var handler log.Handler
 	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL2, "EMC-GETH", log.EmcFormat(false))
 	pool.logTx.SetHandler(handler)
 
+	var handler2 log.Handler
+	handler2, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL3, "EMC-GETH", log.EmcFormat(false))
+	pool.logBlockHead.SetHandler(handler2)
+
 	// DBG TMP logger !!!!!!!!!! - (STDout - for local (OSX) testing)
 	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
 	if runtime.GOOS == "darwin" { // OSX - local ...
 		pool.logTx.SetHandler(handlerOSX)
+		pool.logBlockHead.SetHandler(handlerOSX)
 	}
+
+	pool.locals = newAccountSet(pool.signer)
+	pool.priced = newTxPricedList(&pool.all)
+	pool.reset(nil, chain.CurrentBlock().Header())
 
 	// If local transactions and journaling is enabled, load from disk
 	if !config.NoLocals && config.Journal != "" {
@@ -270,10 +278,6 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 	go pool.loop()
 
 	return pool
-}
-
-func (pool *TxPool) Log() log.Logger {
-	return pool.logTx
 }
 
 // loop is the transaction pool's main event loop, waiting for and reacting to
@@ -448,6 +452,15 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	// Check the queue and move transactions over to the pending if possible
 	// or remove those that have become invalid
 	pool.promoteExecutables(nil)
+
+	// TMP TEST LOG  ---
+	// newHead.Number, "hash", newHead.Hash()
+
+	pool.logBlockHead.Info("NewBlockHead",
+		"LocalTimestamp", time.Now(),
+		"BlockHash", newHead.Hash(),
+		"Number", newHead.Number)
+
 }
 
 // Stop terminates the transaction pool.

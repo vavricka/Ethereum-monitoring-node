@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,8 +14,8 @@ import (
 )
 
 const (
-	timeFormat     = "2006-01-02T15:04:05.000-0700"
-	termTimeFormat = "01-02|15:04:05"
+	timeFormat     = "2006-01-02T15:04:05-0700"
+	termTimeFormat = "01-02|15:04:05.000"
 	floatFormat    = 'f'
 	termMsgJust    = 40
 )
@@ -78,11 +77,11 @@ type TerminalStringer interface {
 // a terminal with color-coded level output and terser human friendly timestamp.
 // This format should only be used for interactive programs or while developing.
 //
-//     [TIME] [LEVEL] MESAGE key=value key=value ...
+//     [LEVEL] [TIME] MESAGE key=value key=value ...
 //
 // Example:
 //
-//     [May 16 20:58:45] [DBUG] remove route ns=haproxy addr=127.0.0.1:50002
+//     [DBUG] [May 16 20:58:45] remove route ns=haproxy addr=127.0.0.1:50002
 //
 func TerminalFormat(usecolor bool) Format {
 	return FormatFunc(func(r *Record) []byte {
@@ -144,20 +143,6 @@ func TerminalFormat(usecolor bool) Format {
 	})
 }
 
-// default in production usekeys = false ( we want logs w/o 'key=' )
-func EmcFormat(usekeys bool) Format {
-	return FormatFunc(func(r *Record) []byte {
-		b := &bytes.Buffer{}
-		if usekeys {
-			fmt.Fprintf(b, "%s|", r.Msg)
-		} else if runtime.GOOS == "darwin" {
-			fmt.Fprintf(b, "%s|", r.Msg)
-		}
-		logfmtemc(b, r.Ctx, usekeys)
-		return b.Bytes()
-	})
-}
-
 // LogfmtFormat prints records in logfmt format, an easy machine-parseable but human-readable
 // format for key/value pairs.
 //
@@ -170,32 +155,6 @@ func LogfmtFormat() Format {
 		logfmt(buf, append(common, r.Ctx...), 0, false)
 		return buf.Bytes()
 	})
-}
-
-func logfmtemc(buf *bytes.Buffer, ctx []interface{}, usekeys bool) {
-	for i := 0; i < len(ctx); i += 2 {
-		if i != 0 {
-			if usekeys {
-				buf.WriteByte(' ')
-			} else {
-				buf.WriteByte(',')
-			}
-		}
-
-		k, _ := ctx[i].(string)
-		v := formatLogfmtValue(ctx[i+1], false)
-
-		if usekeys {
-			buf.WriteString(k)
-			buf.WriteByte('=')
-		}
-		buf.WriteString(v)
-	}
-	if usekeys {
-		buf.WriteByte('\n')
-	} else if runtime.GOOS == "darwin" {
-		buf.WriteByte('\n')
-	}
 }
 
 func logfmt(buf *bytes.Buffer, ctx []interface{}, color int, term bool) {
@@ -237,16 +196,58 @@ func logfmt(buf *bytes.Buffer, ctx []interface{}, color int, term bool) {
 	buf.WriteByte('\n')
 }
 
-// JsonFormat formats log records as JSON objects separated by newlines.
-// It is the equivalent of JsonFormatEx(false, true).
-func JsonFormat() Format {
-	return JsonFormatEx(false, true)
+// JSONFormat formats log records as JSON objects separated by newlines.
+// It is the equivalent of JSONFormatEx(false, true).
+func JSONFormat() Format {
+	return JSONFormatEx(false, true)
 }
 
-// JsonFormatEx formats log records as JSON objects. If pretty is true,
+// JSONFormatOrderedEx formats log records as JSON arrays. If pretty is true,
 // records will be pretty-printed. If lineSeparated is true, records
 // will be logged with a new line between each record.
-func JsonFormatEx(pretty, lineSeparated bool) Format {
+func JSONFormatOrderedEx(pretty, lineSeparated bool) Format {
+	jsonMarshal := json.Marshal
+	if pretty {
+		jsonMarshal = func(v interface{}) ([]byte, error) {
+			return json.MarshalIndent(v, "", "    ")
+		}
+	}
+	return FormatFunc(func(r *Record) []byte {
+		props := make(map[string]interface{})
+
+		props[r.KeyNames.Time] = r.Time
+		props[r.KeyNames.Lvl] = r.Lvl.String()
+		props[r.KeyNames.Msg] = r.Msg
+
+		ctx := make([]string, len(r.Ctx))
+		for i := 0; i < len(r.Ctx); i += 2 {
+			k, ok := r.Ctx[i].(string)
+			if !ok {
+				props[errorKey] = fmt.Sprintf("%+v is not a string key,", r.Ctx[i])
+			}
+			ctx[i] = k
+			ctx[i+1] = formatLogfmtValue(r.Ctx[i+1], true)
+		}
+		props[r.KeyNames.Ctx] = ctx
+
+		b, err := jsonMarshal(props)
+		if err != nil {
+			b, _ = jsonMarshal(map[string]string{
+				errorKey: err.Error(),
+			})
+			return b
+		}
+		if lineSeparated {
+			b = append(b, '\n')
+		}
+		return b
+	})
+}
+
+// JSONFormatEx formats log records as JSON objects. If pretty is true,
+// records will be pretty-printed. If lineSeparated is true, records
+// will be logged with a new line between each record.
+func JSONFormatEx(pretty, lineSeparated bool) Format {
 	jsonMarshal := json.Marshal
 	if pretty {
 		jsonMarshal = func(v interface{}) ([]byte, error) {
@@ -266,7 +267,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 			if !ok {
 				props[errorKey] = fmt.Sprintf("%+v is not a string key", r.Ctx[i])
 			}
-			props[k] = formatJsonValue(r.Ctx[i+1])
+			props[k] = formatJSONValue(r.Ctx[i+1])
 		}
 
 		b, err := jsonMarshal(props)
@@ -311,7 +312,7 @@ func formatShared(value interface{}) (result interface{}) {
 	}
 }
 
-func formatJsonValue(value interface{}) interface{} {
+func formatJSONValue(value interface{}) interface{} {
 	value = formatShared(value)
 	switch value.(type) {
 	case int, int8, int16, int32, int64, float32, float64, uint, uint8, uint16, uint32, uint64, string:

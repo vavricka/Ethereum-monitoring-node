@@ -19,8 +19,11 @@ package core
 import (
 	"errors"
 	"fmt"
+	syslog "log/syslog"
 	"math"
 	"math/big"
+	"os"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -194,6 +197,9 @@ type TxPool struct {
 	signer       types.Signer
 	mu           sync.RWMutex
 
+	logTx        log.Logger
+	logBlockHead log.Logger
+
 	currentState  *state.StateDB      // Current state in the blockchain head
 	pendingState  *state.ManagedState // Pending state tracking virtual nonces
 	currentMaxGas uint64              // Current gas limit for transaction caps
@@ -231,6 +237,25 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
 	}
+
+	pool.logTx = log.New()
+	pool.logBlockHead = log.New()
+
+	var handler log.Handler
+	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL2, "EMC-GETH", log.EmcFormat(false))
+	pool.logTx.SetHandler(handler)
+
+	var handler2 log.Handler
+	handler2, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL3, "EMC-GETH", log.EmcFormat(false))
+	pool.logBlockHead.SetHandler(handler2)
+
+	// DBG TMP logger !!!!!!!!!! - (STDout - for local (OSX) testing)
+	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
+	if runtime.GOOS == "darwin" { // OSX - local ...
+		pool.logTx.SetHandler(handlerOSX)
+		pool.logBlockHead.SetHandler(handlerOSX)
+	}
+
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
 		log.Info("Setting new local account", "address", addr)
@@ -433,6 +458,12 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	// Check the queue and move transactions over to the pending if possible
 	// or remove those that have become invalid
 	pool.promoteExecutables(nil)
+
+	pool.logBlockHead.Info("NewBlockHead",
+		"LocalTimestamp", time.Now(),
+		"BlockHash", newHead.Hash(),
+		"Number", newHead.Number)
+
 }
 
 // Stop terminates the transaction pool.
@@ -689,6 +720,106 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	return replace, nil
 }
 
+func (pool *TxPool) addEMC(tx *types.Transaction, receivedAt time.Time, local bool) (bool, error) {
+	// If the transaction is already known, discard it
+	hash := tx.Hash()
+	if pool.all.Get(hash) != nil {
+		log.Trace("Discarding already known transaction", "hash", hash)
+		return false, fmt.Errorf("known transaction: %x", hash)
+	}
+
+	fromaddr, _ := types.Sender(pool.signer, tx)
+
+	// If the transaction fails basic validation, discard it
+	err := pool.validateTx(tx, local)
+
+	var msgType = ""
+	if tx.To() == nil {
+		msgType = "CC" // CONTRACT CREATION
+	} else if len(tx.Data()) > 0 {
+		msgType = "MC" // Message Call
+	} else {
+		msgType = "TX" // Transaction
+	}
+	pool.logTx.Info("TxMsg",
+		"LocalTimeStamp", receivedAt,
+		"Hash", tx.Hash(),
+		"GasLimit", tx.Gas(),
+		"GasPrice", tx.GasPrice(),
+		"Value", tx.Value(), // amount
+		"Nonce", tx.Nonce(),
+		"MsgType", msgType,
+		"Cost", tx.Cost(),
+		"Size", tx.Size(),
+		"To", tx.To(),
+		"From", fromaddr,
+		"ValidityErr", err)
+
+	if err != nil {
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		invalidTxCounter.Inc(1)
+		return false, err
+	}
+	// If the transaction pool is full, discard underpriced transactions
+	if uint64(pool.all.Count()) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
+		// If the new transaction is underpriced, don't accept it
+		if !local && pool.priced.Underpriced(tx, pool.locals) {
+			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.GasPrice())
+			underpricedTxCounter.Inc(1)
+			return false, ErrUnderpriced
+		}
+		// New transaction is better than our worse ones, make room for it
+		drop := pool.priced.Discard(pool.all.Count()-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
+		for _, tx := range drop {
+			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Hash(), "price", tx.GasPrice())
+			underpricedTxCounter.Inc(1)
+			pool.removeTx(tx.Hash(), false)
+		}
+	}
+	// If the transaction is replacing an already pending one, do directly
+	from, _ := types.Sender(pool.signer, tx) // already validated
+	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
+		// Nonce already pending, check if required price bump is met
+		inserted, old := list.Add(tx, pool.config.PriceBump)
+		if !inserted {
+			pendingDiscardCounter.Inc(1)
+			return false, ErrReplaceUnderpriced
+		}
+		// New transaction is better, replace old one
+		if old != nil {
+			pool.all.Remove(old.Hash())
+			pool.priced.Removed()
+			pendingReplaceCounter.Inc(1)
+		}
+		pool.all.Add(tx)
+		pool.priced.Put(tx)
+		pool.journalTx(from, tx)
+
+		log.Trace("Pooled new executable transaction", "hash", hash, "from", from, "to", tx.To())
+
+		// We've directly injected a replacement transaction, notify subsystems
+		go pool.txFeed.Send(NewTxsEvent{types.Transactions{tx}})
+
+		return old != nil, nil
+	}
+	// New transaction isn't replacing a pending one, push into queue
+	replace, err := pool.enqueueTx(hash, tx)
+	if err != nil {
+		return false, err
+	}
+	// Mark local addresses and journal local transactions
+	if local {
+		if !pool.locals.contains(from) {
+			log.Info("Setting new local account", "address", from)
+			pool.locals.add(from)
+		}
+	}
+	pool.journalTx(from, tx)
+
+	log.Trace("Pooled new future transaction", "hash", hash, "from", from, "to", tx.To())
+	return replace, nil
+}
+
 // enqueueTx inserts a new transaction into the non-executable transaction queue.
 //
 // Note, this method assumes the pool lock is held!
@@ -782,6 +913,10 @@ func (pool *TxPool) AddRemote(tx *types.Transaction) error {
 	return pool.addTx(tx, false)
 }
 
+func (pool *TxPool) AddRemoteEMC(tx *types.Transaction, receivedAt time.Time) error {
+	return pool.addTxEMC(tx, receivedAt, false)
+}
+
 // AddLocals enqueues a batch of transactions into the pool if they are valid,
 // marking the senders as a local ones in the mean time, ensuring they go around
 // the local pricing constraints.
@@ -803,6 +938,23 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 
 	// Try to inject the transaction and update any state
 	replace, err := pool.add(tx, local)
+	if err != nil {
+		return err
+	}
+	// If we added a new transaction, run promotion checks and return
+	if !replace {
+		from, _ := types.Sender(pool.signer, tx) // already validated
+		pool.promoteExecutables([]common.Address{from})
+	}
+	return nil
+}
+
+func (pool *TxPool) addTxEMC(tx *types.Transaction, receivedAt time.Time, local bool) error {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+
+	// Try to inject the transaction and update any state
+	replace, err := pool.addEMC(tx, receivedAt, local)
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	timeFormat     = "2006-01-02T15:04:05-0700"
+	timeFormat     = "2006-01-02T15:04:05.000-0700"
 	termTimeFormat = "01-02|15:04:05.000"
 	floatFormat    = 'f'
 	termMsgJust    = 40
@@ -143,6 +144,20 @@ func TerminalFormat(usecolor bool) Format {
 	})
 }
 
+// default in production usekeys = false ( we want logs w/o 'key=' )
+func EmcFormat(usekeys bool) Format {
+	return FormatFunc(func(r *Record) []byte {
+		b := &bytes.Buffer{}
+		if usekeys {
+			fmt.Fprintf(b, "%s|", r.Msg)
+		} else if runtime.GOOS == "darwin" {
+			fmt.Fprintf(b, "%s|", r.Msg)
+		}
+		logfmtemc(b, r.Ctx, usekeys)
+		return b.Bytes()
+	})
+}
+
 // LogfmtFormat prints records in logfmt format, an easy machine-parseable but human-readable
 // format for key/value pairs.
 //
@@ -155,6 +170,32 @@ func LogfmtFormat() Format {
 		logfmt(buf, append(common, r.Ctx...), 0, false)
 		return buf.Bytes()
 	})
+}
+
+func logfmtemc(buf *bytes.Buffer, ctx []interface{}, usekeys bool) {
+	for i := 0; i < len(ctx); i += 2 {
+		if i != 0 {
+			if usekeys {
+				buf.WriteByte(' ')
+			} else {
+				buf.WriteByte(',')
+			}
+		}
+
+		k, _ := ctx[i].(string)
+		v := formatLogfmtValue(ctx[i+1], false)
+
+		if usekeys {
+			buf.WriteString(k)
+			buf.WriteByte('=')
+		}
+		buf.WriteString(v)
+	}
+	if usekeys {
+		buf.WriteByte('\n')
+	} else if runtime.GOOS == "darwin" {
+		buf.WriteByte('\n')
+	}
 }
 
 func logfmt(buf *bytes.Buffer, ctx []interface{}, color int, term bool) {

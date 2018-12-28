@@ -1,5 +1,4 @@
 #!/bin/bash
-#set -x
 
 export PROJ_ROOT="$PWD"
 export DATA_PATH="$PROJ_ROOT/clients-data"
@@ -9,10 +8,12 @@ export DATA_PATH="$PROJ_ROOT/clients-data"
 
 export GETH="$PROJ_ROOT/go-ethereum"
 
-# RUN the client in console mode.
-"$GETH/build/bin/geth" --syncmode "fast" --identity \
-"INESC-ID-1-EU-Lisbon" --datadir "$DATA_PATH" \
---cache=4096 --verbosity 6 console 2>> "$DATA_PATH/geth-out.log"
+#NOHUP
+nohup "$GETH/build/bin/geth" --syncmode "fast" --identity \
+"INESC-ID-EU-Lisbon" --datadir "$DATA_PATH" \
+--cache=6144 --maxpeers "500" &>>"/dev/null" &
 
-#later:  nohup command-name &
-#        = no console, run on background ...
+#CONSOLE
+#"$GETH/build/bin/geth" --syncmode "fast" --identity \
+#"INESC-ID-EU-Lisbon" --datadir "$DATA_PATH" \
+#--cache=6144 --verbosity 5 console 2>>"/home/dvavricka/data/geth-out.log"

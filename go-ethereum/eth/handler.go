@@ -108,9 +108,9 @@ type ProtocolManager struct {
 
 	logNewBlockHashesMsg log.Logger //1
 	//logBlockHeadersMsg	log.Logger	//4
-	//logBlockBodiesMsg		log.Logger	//6
-	logNewBlockMsg log.Logger //7
-	logInvalidMsg  log.Logger //(5)
+	logBlockBodiesMsg log.Logger //6
+	logNewBlockMsg    log.Logger //7
+	logInvalidMsg     log.Logger //(5)
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
@@ -138,7 +138,7 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	manager.logNewBlockMsg = log.New()
 	manager.logNewBlockHashesMsg = log.New()
 	//manager.logBlockHeadersMsg = log.New()
-	//manager.logBlockBodiesMsg = log.New()
+	manager.logBlockBodiesMsg = log.New()
 	manager.logInvalidMsg = log.New()
 
 	var handlerNewBlockMsg log.Handler
@@ -153,9 +153,9 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	//handlerBlockHeadersMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL4, "EMC-GETH", log.EmcFormat(false))
 	//manager.logBlockHeadersMsg.SetHandler(handlerBlockHeadersMsg)
 
-	//var handlerBlockBodiesMsg log.Handler
-	//handlerBlockBodiesMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL6, "EMC-GETH", log.EmcFormat(false))
-	//manager.logBlockBodiesMsg.SetHandler(handlerBlockBodiesMsg)
+	var handlerBlockBodiesMsg log.Handler
+	handlerBlockBodiesMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL6, "EMC-GETH", log.EmcFormat(false))
+	manager.logBlockBodiesMsg.SetHandler(handlerBlockBodiesMsg)
 
 	var handlerInvalidMsg log.Handler
 	handlerInvalidMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL5, "EMC-GETH", log.EmcFormat(false))
@@ -167,7 +167,7 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		manager.logNewBlockMsg.SetHandler(handlerOSX)
 		manager.logNewBlockHashesMsg.SetHandler(handlerOSX)
 		//manager.logBlockHeadersMsg.SetHandler(handlerOSX)
-		//manager.logBlockBodiesMsg.SetHandler(handlerOSX)
+		manager.logBlockBodiesMsg.SetHandler(handlerOSX)
 		manager.logInvalidMsg.SetHandler(handlerOSX)
 	}
 
@@ -249,8 +249,8 @@ func (pm *ProtocolManager) Log(msgType int) log.Logger {
 		return pm.logNewBlockMsg
 	//case BlockHeadersMsg:
 	//return pm.logBlockHeadersMsg
-	//case BlockBodiesMsg:
-	//	return pm.logBlockBodiesMsg
+	case BlockBodiesMsg:
+		return pm.logBlockBodiesMsg
 	case 5:
 		return pm.logInvalidMsg
 	default:
@@ -630,7 +630,22 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for i, body := range request {
 			transactions[i] = body.Transactions
 			uncles[i] = body.Uncles
+
+			//  - just to test,.. vypsat all txs and uncles in this
+			//pak porovnat ze to jsou random txs a uncles a  ne nutne set jich z nakych
+			// konkret bloku.
+
+			txs_str := ""
+			for _, transaction := range transactions[i] {
+				txhash := transaction.Hash().String()
+				txs_str = txs_str + txhash + ";"
+			}
+
+			pm.Log(BlockBodiesMsg).Info("BlockBodiesMsg",
+				"req", i,
+				"txs", txs_str)
 		}
+
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
 		filter := len(transactions) > 0 || len(uncles) > 0
 		if filter {

@@ -2,11 +2,7 @@
 
 import pandas as pd
 
-PROJ_ROOT = "/Users/deus/Projects/Ethereum-monitoring-node/"
-LOGS_PATH = PROJ_ROOT + "raw-logs/csv/"
-
-TX_CSV = LOGS_PATH + "TxMsg.csv"
-#TX_CSV = LOGS_PATH + "TxMsgTEST.csv"
+TX_CSV = "txsNoDuplicates.csv"
 
 #read file into DataFrame
 txs = pd.read_csv(TX_CSV, usecols=['MsgType', 'GasLimit'])

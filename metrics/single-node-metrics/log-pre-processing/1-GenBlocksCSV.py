@@ -2,33 +2,23 @@
 
 import pandas as pd
 import numpy as np
-#import csv
 
-PROJ_ROOT = "/Users/deus/Projects/Ethereum-monitoring-node/"
-LOGS_PATH = PROJ_ROOT + "raw-logs/csv/"
 
-FINAL_PATH = PROJ_ROOT + "raw-logs/csv-final/"
 
-NEWBLOCK_CSV = LOGS_PATH + "NewBlockMsg.csv"
-NEWBLOCKHASHES_CSV = LOGS_PATH + "NewBlockHashesMsg.csv"
-NEWBLOCKHEADS_CSV = LOGS_PATH + "NewBlockHead.csv"
-#TMP
-#NEWBLOCK_CSV = LOGS_PATH + "NewBlockMsgSMALL.csv"
-#NEWBLOCKHASHES_CSV = LOGS_PATH + "NewBlockHashesMsgSMALL.csv"
-#NEWBLOCKHEADS_CSV = LOGS_PATH + "NewBlockHeadSMALL.csv"
+NEWBLOCK_CSV = "blocks.csv"
+NEWBLOCKHASHES_CSV = "blockAnnouncements.csv"
+NEWBLOCKHEADS_CSV = "heads.csv"
 
-BLOCKS_CSV = FINAL_PATH + "Blocks.csv"
+BLOCKS_CSV = "blocksFinal.csv"
 
 # NewBlockMsg -- remove rows with
-blck1 = pd.read_csv(NEWBLOCK_CSV)
+blck1 = pd.read_csv(NEWBLOCK_CSV, index_col=0)
 #drop_duplicates is by def (keep='first') -- leaves the oldes Timestamp ;)
 blck1NoDuplicates = blck1.drop_duplicates('BlockHash')
 
 # NewBlockHashesMsg -- remove rows with
-blck2 = pd.read_csv(NEWBLOCKHASHES_CSV)
+blck2 = pd.read_csv(NEWBLOCKHASHES_CSV, index_col=0)
 blck2NoDuplicates = blck2.drop_duplicates('BlockHash')
-
-
 
 
 
@@ -53,11 +43,9 @@ blocks = blck1NoDuplicates.assign(BlockType = np.nan)
 ######### ASI DONE, j u s t  CHECK
 
 #load newblockhead....   
-heads = pd.read_csv(NEWBLOCKHEADS_CSV)
+heads = pd.read_csv(NEWBLOCKHEADS_CSV, index_col=0)
 #add columnt     BlockType
 heads = heads.assign(BlockType = np.nan)
-
-
 
 
 last_index = (len(heads.index)-1)

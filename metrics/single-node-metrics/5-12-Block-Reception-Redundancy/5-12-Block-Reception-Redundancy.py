@@ -2,13 +2,8 @@
 
 import pandas as pd
 
-PROJ_ROOT = "/Users/deus/Projects/Ethereum-monitoring-node/"
-LOGS_PATH = PROJ_ROOT + "raw-logs/csv/"
-
-NEWBLOCK_CSV = LOGS_PATH + "NewBlockMsg.csv"
-NEWBLOCKHASHES_CSV = LOGS_PATH + "NewBlockHashesMsg.csv"
-#NEWBLOCK_CSV = LOGS_PATH + "NewBlockMsgTEST.csv"
-#NEWBLOCKHASHES_CSV = LOGS_PATH + "NewBlockHashesMsgTEST.csv"
+NEWBLOCK_CSV =  "blocks.csv"
+NEWBLOCKHASHES_CSV = "blockAnnouncements.csv"
 
 #read file into a DataFrame
 blck1 = pd.read_csv(NEWBLOCK_CSV, usecols=['BlockHash'])
@@ -23,7 +18,7 @@ def print_info(msgType):
     #occurencies = occurencies.sort_index()
     occurencies = pd.value_counts(msgType.value_counts().values)
     for i, row in occurencies.iteritems():
-        print("In total", row, "txs were received", i, "times")
+        print("In total", row, "blocks were received", i, "times")
     print("Avg number of block reception", msgType.value_counts().values.mean())
 
 print("BLOCKS are propagated using 2 different message types",

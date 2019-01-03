@@ -26,7 +26,7 @@ import (
 	syslog "log/syslog"
 	"net"
 	"os"
- 	"runtime"
+	"runtime"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -190,7 +190,7 @@ type Server struct {
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
 	log           log.Logger
-	logPeer		  log.Logger
+	logPeer       log.Logger
 }
 
 type peerOpFunc func(map[enode.ID]*Peer)
@@ -428,14 +428,14 @@ func (srv *Server) Start() (err error) {
 	}
 
 	var handler log.Handler
- 	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL0, "EMC-GETH", log.EmcFormat(false))
-	 srv.logPeer.SetHandler(handler)
-	 
+	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL0, "EMC-GETH", log.EmcFormat(false))
+	srv.logPeer.SetHandler(handler)
+
 	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
- 	if runtime.GOOS == "darwin" { // OSX - local ...
+	if runtime.GOOS == "darwin" { // OSX - local ...
 		srv.logPeer.SetHandler(handlerOSX)
 		srv.logPeer.SetHandler(handlerOSX)
- 	}
+	}
 
 	if srv.NoDial && srv.ListenAddr == "" {
 		srv.log.Warn("P2P server will be useless, neither dialing nor listening")
@@ -752,12 +752,12 @@ running:
 				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
 
 				srv.logPeer.Info("Adding Peer",
-				"LocalTimestamp", time.Now(),
-				"Type", "Add",
-				"ID", p.ID(),
-				//"name", name,  // client type (geth/parity..) - not needed I guess
-				"addr", c.fd.RemoteAddr(),
-				"peers", len(peers)+1)
+					"LocalTimestamp", time.Now(),
+					"Type", "Add",
+					"ID", p.ID(),
+					"client", name, // client type (geth/parity..)
+					"addr", c.fd.RemoteAddr(),
+					"peers", len(peers)+1)
 
 				go srv.runPeer(p)
 				peers[c.node.ID()] = p
@@ -783,8 +783,8 @@ running:
 				"Type", "Remove",
 				"ID", pd.ID(),
 				"duration", d,
-				"peers", len(peers)-1,
-				"err", pd.err)
+				"err", pd.err,
+				"peers", len(peers)-1)
 
 			delete(peers, pd.ID())
 			if pd.Inbound() {

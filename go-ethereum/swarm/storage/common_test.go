@@ -19,7 +19,6 @@ package storage
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"flag"
 	"fmt"
 	"io"
@@ -31,7 +30,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 	ch "github.com/ethereum/go-ethereum/swarm/chunk"
-	colorable "github.com/mattn/go-colorable"
+	"github.com/mattn/go-colorable"
 )
 
 var (
@@ -86,17 +85,6 @@ func newLDBStore(t *testing.T) (*LDBStore, func()) {
 
 func mputRandomChunks(store ChunkStore, n int, chunksize int64) ([]Chunk, error) {
 	return mput(store, n, GenerateRandomChunk)
-}
-
-func mputChunks(store ChunkStore, chunks ...Chunk) error {
-	i := 0
-	f := func(n int64) Chunk {
-		chunk := chunks[i]
-		i++
-		return chunk
-	}
-	_, err := mput(store, len(chunks), f)
-	return err
 }
 
 func mput(store ChunkStore, n int, f func(i int64) Chunk) (hs []Chunk, err error) {
@@ -162,10 +150,6 @@ func mget(store ChunkStore, hs []Address, f func(h Address, chunk Chunk) error) 
 	return err
 }
 
-func testDataReader(l int) (r io.Reader) {
-	return io.LimitReader(rand.Reader, int64(l))
-}
-
 func (r *brokenLimitedReader) Read(buf []byte) (int, error) {
 	if r.off+len(buf) > r.errAt {
 		return 0, fmt.Errorf("Broken reader")
@@ -195,8 +179,9 @@ func testStoreCorrect(m ChunkStore, n int, chunksize int64, t *testing.T) {
 			return fmt.Errorf("key does not match retrieved chunk Address")
 		}
 		hasher := MakeHashFunc(DefaultHash)()
-		hasher.ResetWithLength(chunk.SpanBytes())
-		hasher.Write(chunk.Payload())
+		data := chunk.Data()
+		hasher.ResetWithLength(data[:8])
+		hasher.Write(data[8:])
 		exp := hasher.Sum(nil)
 		if !bytes.Equal(h, exp) {
 			return fmt.Errorf("key is not hash of chunk data")

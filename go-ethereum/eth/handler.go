@@ -91,26 +91,21 @@ type ProtocolManager struct {
 	txsSub        event.Subscription
 	minedBlockSub *event.TypeMuxSubscription
 
+	whitelist map[uint64]common.Hash
+
 	// channels for fetcher, syncer, txsyncLoop
 	newPeerCh   chan *peer
 	txsyncCh    chan *txsync
 	quitSync    chan struct{}
 	noMorePeers chan struct{}
 
-	//StatusMsg          = (0)   [0x00] via eth/protocol.go
 	//NewBlockHashesMsg  = (1)   [0x01]
-	//TxMsg              = (2)   [0x02]
-	//GetBlockHeadersMsg = (3)   [0x03]
-	//BlockHeadersMsg    = (4)   [0x04]
 	//GetBlockBodiesMsg  = (5)   [0x05]
-	//--------------     = (6)   [0x06]
 	//NewBlockMsg        = (7)   [0x07]
 
 	logNewBlockHashesMsg log.Logger //1
-	//logBlockHeadersMsg	log.Logger	//4
-	//logBlockBodiesMsg log.Logger //6
-	logNewBlockMsg log.Logger //7
-	logInvalidMsg  log.Logger //(5)
+	logInvalidMsg        log.Logger //(5)
+	logNewBlockMsg       log.Logger //7
 
 	// wait group is used for graceful shutdowns during downloading
 	// and processing
@@ -119,7 +114,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new Ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
 // with the Ethereum network.
-func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkID uint64, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ethdb.Database) (*ProtocolManager, error) {
+func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkID uint64, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ethdb.Database, whitelist map[uint64]common.Hash) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkID:   networkID,
@@ -128,6 +123,7 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		blockchain:  blockchain,
 		chainconfig: config,
 		peers:       newPeerSet(),
+		whitelist:   whitelist,
 		newPeerCh:   make(chan *peer),
 		noMorePeers: make(chan struct{}),
 		txsyncCh:    make(chan *txsync),
@@ -137,40 +133,26 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	// EMC Logger
 	manager.logNewBlockMsg = log.New()
 	manager.logNewBlockHashesMsg = log.New()
-	//manager.logBlockHeadersMsg = log.New()
-	//manager.logBlockBodiesMsg = log.New()
 	manager.logInvalidMsg = log.New()
-
-	var handlerNewBlockMsg log.Handler
-	handlerNewBlockMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL7, "EMC-GETH", log.EmcFormat(false))
-	manager.logNewBlockMsg.SetHandler(handlerNewBlockMsg)
 
 	var handlerNewBlockHashesMsg log.Handler
 	handlerNewBlockHashesMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL1, "EMC-GETH", log.EmcFormat(false))
 	manager.logNewBlockHashesMsg.SetHandler(handlerNewBlockHashesMsg)
 
-	//var handlerBlockHeadersMsg log.Handler
-	//handlerBlockHeadersMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL4, "EMC-GETH", log.EmcFormat(false))
-	//manager.logBlockHeadersMsg.SetHandler(handlerBlockHeadersMsg)
-
-	//var handlerBlockBodiesMsg log.Handler
-	//handlerBlockBodiesMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL6, "EMC-GETH", log.EmcFormat(false))
-	//manager.logBlockBodiesMsg.SetHandler(handlerBlockBodiesMsg)
-
 	var handlerInvalidMsg log.Handler
 	handlerInvalidMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL5, "EMC-GETH", log.EmcFormat(false))
 	manager.logInvalidMsg.SetHandler(handlerInvalidMsg)
 
-	// DBG TMP logger !!!!!!!!!! - (STDout - for local (OSX) testing)
+	var handlerNewBlockMsg log.Handler
+	handlerNewBlockMsg, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL7, "EMC-GETH", log.EmcFormat(false))
+	manager.logNewBlockMsg.SetHandler(handlerNewBlockMsg)
+
 	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
 	if runtime.GOOS == "darwin" { // OSX - local ...
 		manager.logNewBlockMsg.SetHandler(handlerOSX)
 		manager.logNewBlockHashesMsg.SetHandler(handlerOSX)
-		//manager.logBlockHeadersMsg.SetHandler(handlerOSX)
-		//manager.logBlockBodiesMsg.SetHandler(handlerOSX)
 		manager.logInvalidMsg.SetHandler(handlerOSX)
 	}
-
 	// Figure out whether to allow fast sync or not
 	if mode == downloader.FastSync && blockchain.CurrentBlock().NumberU64() > 0 {
 		log.Warn("Blockchain not empty, fast sync disabled")
@@ -247,11 +229,7 @@ func (pm *ProtocolManager) Log(msgType int) log.Logger {
 		return pm.logNewBlockHashesMsg
 	case NewBlockMsg:
 		return pm.logNewBlockMsg
-	//case BlockHeadersMsg:
-	//return pm.logBlockHeadersMsg
-	//case BlockBodiesMsg:
-	//	return pm.logBlockBodiesMsg
-	case 5:
+	case InvalidMsg:
 		return pm.logInvalidMsg
 	default:
 		panic("Invalid Log Handler")
@@ -381,7 +359,13 @@ func (pm *ProtocolManager) handle(p *peer) error {
 			}
 		}()
 	}
-	// main loop. handle incoming messages.
+	// If we have any explicit whitelist block hashes, request them
+	for number := range pm.whitelist {
+		if err := p.RequestHeadersByNumber(number, 1, 0, false); err != nil {
+			return err
+		}
+	}
+	// Handle incoming messages until the connection is torn down
 	for {
 		if err := pm.handleMsg(p); err != nil {
 			p.Log().Debug("Ethereum message handling failed", "err", err)
@@ -399,7 +383,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return err
 	}
 	if msg.Size > ProtocolMaxMsgSize {
-		pm.Log(5).Info("UnknownMsgType",
+		pm.Log(InvalidMsg).Info("UnknownMsgType",
 			"LocalTimestamp", msg.ReceivedAt,
 			"MessageType", "UnknownType",
 			"Cause", "001") // 001 = ErrMsgTooLarge
@@ -411,7 +395,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	switch {
 	case msg.Code == StatusMsg:
 		// Status messages should never arrive after the handshake
-		pm.Log(5).Info("StatusMsg",
+		pm.Log(InvalidMsg).Info("StatusMsg",
 			"LocalTimestamp", msg.ReceivedAt,
 			"MessageType", "StatusMsg",
 			"Cause", "002") // 002 = uncontrolled status message
@@ -423,7 +407,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		var query getBlockHeadersData
 		if err := msg.Decode(&query); err != nil {
 			//errMsg := fmt.Sprintf("%v: %v", msg, err)
-			pm.Log(5).Info("GetBlockHeadersMsg",
+			pm.Log(InvalidMsg).Info("GetBlockHeadersMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "GetBlockHeadersMsg",
 				"Cause", "003") // 003 = Decoding Failed
@@ -481,7 +465,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-					pm.Log(5).Info("GetBlockHeadersMsg",
+					pm.Log(InvalidMsg).Info("GetBlockHeadersMsg",
 						"LocalTimestamp", msg.ReceivedAt,
 						"MessageType", "GetBlockHeadersMsg",
 						"Cause", "004") // 004 = skip overflow attack
@@ -518,15 +502,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// A batch of headers arrived to one of our previous requests
 		var headers []*types.Header
 		if err := msg.Decode(&headers); err != nil {
-			pm.Log(5).Info("BlockHeadersMsg",
+			pm.Log(InvalidMsg).Info("BlockHeadersMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "BlockHeadersMsg",
 				"Cause", "005") // 005 = Decoding Failed
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-
-		//   (TODO)4  -  BlockHeadersMsg
-
 		// If no headers were received, but we're expending a DAO fork check, maybe it's that
 		if len(headers) == 0 && p.forkDrop != nil {
 			// Possibly an empty reply to the fork header checks, sanity check TDs
@@ -541,7 +522,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			// If we're seemingly on the same chain, disable the drop timer
 			if verifyDAO {
-				pm.Log(5).Info("BlockHeadersMsg",
+				pm.Log(InvalidMsg).Info("BlockHeadersMsg",
 					"LocalTimestamp", msg.ReceivedAt,
 					"MessageType", "BlockHeadersMsg",
 					"Cause", "006") // 006 = verifyDAO failed
@@ -563,7 +544,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				// Validate the header and either drop the peer or continue
 				if err := misc.VerifyDAOHeaderExtraData(pm.chainconfig, headers[0]); err != nil {
 					p.Log().Debug("Verified to be on the other side of the DAO fork, dropping")
-					pm.Log(5).Info("BlockHeadersMsg",
+					pm.Log(InvalidMsg).Info("BlockHeadersMsg",
 						"LocalTimestamp", msg.ReceivedAt,
 						"MessageType", "BlockHeadersMsg",
 						"Cause", "007") // 007 = Other side of the DAO fork
@@ -571,6 +552,14 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				}
 				p.Log().Debug("Verified to be on the same side of the DAO fork")
 				return nil
+			}
+			// Otherwise if it's a whitelisted block, validate against the set
+			if want, ok := pm.whitelist[headers[0].Number.Uint64()]; ok {
+				if hash := headers[0].Hash(); want != hash {
+					p.Log().Info("Whitelist mismatch, dropping peer", "number", headers[0].Number.Uint64(), "hash", hash, "want", want)
+					return errors.New("whitelist block mismatch")
+				}
+				p.Log().Debug("Whitelist block verified", "number", headers[0].Number.Uint64(), "hash", want)
 			}
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
@@ -599,7 +588,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if err := msgStream.Decode(&hash); err == rlp.EOL {
 				break
 			} else if err != nil {
-				pm.Log(5).Info("GetBlockBodiesMsg",
+				pm.Log(InvalidMsg).Info("GetBlockBodiesMsg",
 					"LocalTimestamp", msg.ReceivedAt,
 					"MessageType", "GetBlockBodiesMsg",
 					"Cause", "008") // 008 = Decoding Failed
@@ -617,7 +606,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
-			pm.Log(5).Info("BlockBodiesMsg",
+			pm.Log(InvalidMsg).Info("BlockBodiesMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "BlockBodiesMsg",
 				"Cause", "009") // 009 = Decoding Failed
@@ -627,22 +616,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		transactions := make([][]*types.Transaction, len(request))
 		uncles := make([][]*types.Header, len(request))
 
-		//for i, body := range request {
-		//	transactions[i] = body.Transactions
-		//	uncles[i] = body.Uncles
-
-		//	txs_str := ""
-		//	for _, transaction := range transactions[i] {
-		//		txhash := transaction.Hash().String()
-		//		txs_str = txs_str + txhash + ";"
-		//	}
-
-		//	pm.Log(BlockBodiesMsg).Info("BlockBodiesMsg",
-		//		"LocalTimestamp", msg.ReceivedAt,
-		//		"req", i,
-		//		"txs", txs_str)
-		//}
-
+		for i, body := range request {
+			transactions[i] = body.Transactions
+			uncles[i] = body.Uncles
+		}
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
 		filter := len(transactions) > 0 || len(uncles) > 0
 		if filter {
@@ -659,7 +636,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Decode the retrieval message
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
-			pm.Log(5).Info("GetNodeDataMsg",
+			pm.Log(InvalidMsg).Info("GetNodeDataMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "GetNodeDataMsg",
 				"Cause", "010") // 010 = Generic Error
@@ -690,7 +667,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// A batch of node state data arrived to one of our previous requests
 		var data [][]byte
 		if err := msg.Decode(&data); err != nil {
-			pm.Log(5).Info("NodeDataMsg",
+			pm.Log(InvalidMsg).Info("NodeDataMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "NodeDataMsg",
 				"Cause", "011") // 011 = Decoding Failed
@@ -751,7 +728,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == NewBlockHashesMsg:
 		var announces newBlockHashesData
 		if err := msg.Decode(&announces); err != nil {
-			pm.Log(5).Info("NewBlockHashesMsg",
+			pm.Log(InvalidMsg).Info("NewBlockHashesMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "NewBlockHashesMsg",
 				"Cause", "012") // 012 = Decoding Error
@@ -766,7 +743,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for _, block := range announces {
 			if !pm.blockchain.HasBlock(block.Hash, block.Number) {
 				unknown = append(unknown, block)
-
 				pm.Log(NewBlockHashesMsg).Info("NewBlockHashesMsg",
 					"LocalTimestamp", msg.ReceivedAt,
 					"BlockHash", block.Hash)
@@ -780,7 +756,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Retrieve and decode the propagated block
 		var request newBlockData
 		if err := msg.Decode(&request); err != nil {
-			pm.Log(5).Info("NewBlockMsg",
+			pm.Log(InvalidMsg).Info("NewBlockMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "NewBlockMsg",
 				"Cause", "013") // 013 = Decoding Error
@@ -835,12 +811,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		//"TxHash", request.Block.TxHash(), 		// transaction trie’s root - No usage..
 		//"ReceiptHash", request.Block.ReceiptHash(), //receipt trie - No usage
 
-		// Update the peers total difficulty if better than the previous
+		// Update the peer's total difficulty if better than the previous
 		if _, td := p.Head(); trueTD.Cmp(td) > 0 {
 			p.SetHead(trueHead, trueTD)
 
 			// Schedule a sync if above ours. Note, this will not fire a sync for a gap of
-			// a singe block (as the true TD is below the propagated block), however this
+			// a single block (as the true TD is below the propagated block), however this
 			// scenario should easily be covered by the fetcher.
 			currentBlock := pm.blockchain.CurrentBlock()
 			if trueTD.Cmp(pm.blockchain.GetTd(currentBlock.Hash(), currentBlock.NumberU64())) > 0 {
@@ -856,7 +832,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions can be processed, parse all of them and deliver to the pool
 		var txs []*types.Transaction
 		if err := msg.Decode(&txs); err != nil {
-			pm.Log(5).Info("TxMsg",
+			pm.Log(InvalidMsg).Info("TxMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "TxMsg",
 				"Cause", "014") // 014 = Decoding Error
@@ -868,10 +844,10 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				return errResp(ErrDecode, "transaction %d is nil", i)
 			}
 			p.MarkTransaction(tx.Hash())
-
 			// TXS are Logged in tx_pool.go where they are verified as well
 			pm.txpool.AddRemoteEMC(tx, msg.ReceivedAt)
 		}
+		//this is commented out because we log them txs separately in AddRemoteEMC instead.
 		//pm.txpool.AddRemotes(txs)
 
 	default:

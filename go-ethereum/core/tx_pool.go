@@ -175,6 +175,26 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 		log.Warn("Sanitizing invalid txpool price bump", "provided", conf.PriceBump, "updated", DefaultTxPoolConfig.PriceBump)
 		conf.PriceBump = DefaultTxPoolConfig.PriceBump
 	}
+	if conf.AccountSlots < 1 {
+		log.Warn("Sanitizing invalid txpool account slots", "provided", conf.AccountSlots, "updated", DefaultTxPoolConfig.AccountSlots)
+		conf.AccountSlots = DefaultTxPoolConfig.AccountSlots
+	}
+	if conf.GlobalSlots < 1 {
+		log.Warn("Sanitizing invalid txpool global slots", "provided", conf.GlobalSlots, "updated", DefaultTxPoolConfig.GlobalSlots)
+		conf.GlobalSlots = DefaultTxPoolConfig.GlobalSlots
+	}
+	if conf.AccountQueue < 1 {
+		log.Warn("Sanitizing invalid txpool account queue", "provided", conf.AccountQueue, "updated", DefaultTxPoolConfig.AccountQueue)
+		conf.AccountQueue = DefaultTxPoolConfig.AccountQueue
+	}
+	if conf.GlobalQueue < 1 {
+		log.Warn("Sanitizing invalid txpool global queue", "provided", conf.GlobalQueue, "updated", DefaultTxPoolConfig.GlobalQueue)
+		conf.GlobalQueue = DefaultTxPoolConfig.GlobalQueue
+	}
+	if conf.Lifetime < 1 {
+		log.Warn("Sanitizing invalid txpool lifetime", "provided", conf.Lifetime, "updated", DefaultTxPoolConfig.Lifetime)
+		conf.Lifetime = DefaultTxPoolConfig.Lifetime
+	}
 	return conf
 }
 
@@ -196,7 +216,7 @@ type TxPool struct {
 	chainHeadSub event.Subscription
 	signer       types.Signer
 	mu           sync.RWMutex
-
+	// EMC logging
 	logTx        log.Logger
 	logBlockHead log.Logger
 
@@ -249,7 +269,6 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 	handler2, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL3, "EMC-GETH", log.EmcFormat(false))
 	pool.logBlockHead.SetHandler(handler2)
 
-	// DBG TMP logger !!!!!!!!!! - (STDout - for local (OSX) testing)
 	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
 	if runtime.GOOS == "darwin" { // OSX - local ...
 		pool.logTx.SetHandler(handlerOSX)
@@ -463,7 +482,6 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 		"LocalTimestamp", time.Now(),
 		"BlockHash", newHead.Hash(),
 		"Number", newHead.Number)
-
 }
 
 // Stop terminates the transaction pool.
@@ -720,6 +738,14 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	return replace, nil
 }
 
+// addEMC validates a transaction and inserts it into the non-executable queue for
+// later pending promotion and execution. If the transaction is a replacement for
+// an already pending or queued one, it overwrites the previous and returns this
+// so outer code doesn't uselessly call promote.
+//
+// If a newly added transaction is marked as local, its sending account will be
+// whitelisted, preventing any associated transaction from being dropped out of
+// the pool due to pricing constraints.
 func (pool *TxPool) addEMC(tx *types.Transaction, receivedAt time.Time, local bool) (bool, error) {
 	// If the transaction is already known, discard it
 	hash := tx.Hash()
@@ -913,6 +939,9 @@ func (pool *TxPool) AddRemote(tx *types.Transaction) error {
 	return pool.addTx(tx, false)
 }
 
+// AddRemoteEMC enqueues a single transaction into the pool if it is valid. If the
+// sender is not among the locally tracked ones, full pricing constraints will
+// apply.
 func (pool *TxPool) AddRemoteEMC(tx *types.Transaction, receivedAt time.Time) error {
 	return pool.addTxEMC(tx, receivedAt, false)
 }
@@ -949,6 +978,7 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 	return nil
 }
 
+// addTxEMC enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTxEMC(tx *types.Transaction, receivedAt time.Time, local bool) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
@@ -977,7 +1007,7 @@ func (pool *TxPool) addTxs(txs []*types.Transaction, local bool) []error {
 // addTxsLocked attempts to queue a batch of transactions if they are valid,
 // whilst assuming the transaction pool lock is already held.
 func (pool *TxPool) addTxsLocked(txs []*types.Transaction, local bool) []error {
-	// Add the batch of transaction, tracking the accepted ones
+	// Add the batch of transactions, tracking the accepted ones
 	dirty := make(map[common.Address]struct{})
 	errs := make([]error, len(txs))
 

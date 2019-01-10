@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 	"sync"
 	"time"
 
@@ -47,6 +48,31 @@ const (
 	HashSize         = 32
 )
 
+// Enumerate options for syncing and retrieval
+type SyncingOption int
+type RetrievalOption int
+
+// Syncing options
+const (
+	// Syncing disabled
+	SyncingDisabled SyncingOption = iota
+	// Register the client and the server but not subscribe
+	SyncingRegisterOnly
+	// Both client and server funcs are registered, subscribe sent automatically
+	SyncingAutoSubscribe
+)
+
+const (
+	// Retrieval disabled. Used mostly for tests to isolate syncing features (i.e. syncing only)
+	RetrievalDisabled RetrievalOption = iota
+	// Only the client side of the retrieve request is registered.
+	// (light nodes do not serve retrieve requests)
+	// once the client is registered, subscription to retrieve request stream is always sent
+	RetrievalClientOnly
+	// Both client and server funcs are registered, subscribe sent automatically
+	RetrievalEnabled
+)
+
 // Registry registry for outgoing and incoming streamer constructors
 type Registry struct {
 	addr           enode.ID
@@ -60,28 +86,33 @@ type Registry struct {
 	peers          map[enode.ID]*Peer
 	delivery       *Delivery
 	intervalsStore state.Store
-	doRetrieve     bool
+	autoRetrieval  bool // automatically subscribe to retrieve request stream
 	maxPeerServers int
+	balance        protocols.Balance // implements protocols.Balance, for accounting
+	prices         protocols.Prices  // implements protocols.Prices, provides prices to accounting
+	spec           *protocols.Spec   // this protocol's spec
 }
 
 // RegistryOptions holds optional values for NewRegistry constructor.
 type RegistryOptions struct {
 	SkipCheck       bool
-	DoSync          bool // Sets if the server syncs with peers. Default is true, set to false by lightnode or nosync flags.
-	DoRetrieve      bool // Sets if the server issues Retrieve requests. Default is true.
-	DoServeRetrieve bool // Sets if the server serves Retrieve requests. Default is true, set to false by lightnode flag.
+	Syncing         SyncingOption   // Defines syncing behavior
+	Retrieval       RetrievalOption // Defines retrieval behavior
 	SyncUpdateDelay time.Duration
 	MaxPeerServers  int // The limit of servers for each peer in registry
 }
 
 // NewRegistry is Streamer constructor
-func NewRegistry(localID enode.ID, delivery *Delivery, syncChunkStore storage.SyncChunkStore, intervalsStore state.Store, options *RegistryOptions) *Registry {
+func NewRegistry(localID enode.ID, delivery *Delivery, syncChunkStore storage.SyncChunkStore, intervalsStore state.Store, options *RegistryOptions, balance protocols.Balance) *Registry {
 	if options == nil {
 		options = &RegistryOptions{}
 	}
 	if options.SyncUpdateDelay <= 0 {
 		options.SyncUpdateDelay = 15 * time.Second
 	}
+	// check if retrieval has been disabled
+	retrieval := options.Retrieval != RetrievalDisabled
+
 	streamer := &Registry{
 		addr:           localID,
 		skipCheck:      options.SkipCheck,
@@ -90,13 +121,17 @@ func NewRegistry(localID enode.ID, delivery *Delivery, syncChunkStore storage.Sy
 		peers:          make(map[enode.ID]*Peer),
 		delivery:       delivery,
 		intervalsStore: intervalsStore,
-		doRetrieve:     options.DoRetrieve,
+		autoRetrieval:  retrieval,
 		maxPeerServers: options.MaxPeerServers,
+		balance:        balance,
 	}
+	streamer.setupSpec()
+
 	streamer.api = NewAPI(streamer)
 	delivery.getPeer = streamer.getPeer
 
-	if options.DoServeRetrieve {
+	// if retrieval is enabled, register the server func, so that retrieve requests will be served (non-light nodes only)
+	if options.Retrieval == RetrievalEnabled {
 		streamer.RegisterServerFunc(swarmChunkServerStreamName, func(_ *Peer, _ string, live bool) (Server, error) {
 			if !live {
 				return nil, errors.New("only live retrieval requests supported")
@@ -105,16 +140,21 @@ func NewRegistry(localID enode.ID, delivery *Delivery, syncChunkStore storage.Sy
 		})
 	}
 
-	streamer.RegisterClientFunc(swarmChunkServerStreamName, func(p *Peer, t string, live bool) (Client, error) {
-		return NewSwarmSyncerClient(p, syncChunkStore, NewStream(swarmChunkServerStreamName, t, live))
-	})
+	// if retrieval is not disabled, register the client func (both light nodes and normal nodes can issue retrieve requests)
+	if options.Retrieval != RetrievalDisabled {
+		streamer.RegisterClientFunc(swarmChunkServerStreamName, func(p *Peer, t string, live bool) (Client, error) {
+			return NewSwarmSyncerClient(p, syncChunkStore, NewStream(swarmChunkServerStreamName, t, live))
+		})
+	}
 
-	if options.DoSync {
+	// If syncing is not disabled, the syncing functions are registered (both client and server)
+	if options.Syncing != SyncingDisabled {
 		RegisterSwarmSyncerServer(streamer, syncChunkStore)
 		RegisterSwarmSyncerClient(streamer, syncChunkStore)
 	}
 
-	if options.DoSync {
+	// if syncing is set to automatically subscribe to the syncing stream, start the subscription process
+	if options.Syncing == SyncingAutoSubscribe {
 		// latestIntC function ensures that
 		//   - receiving from the in chan is not blocked by processing inside the for loop
 		// 	 - the latest int value is delivered to the loop after the processing is done
@@ -193,6 +233,21 @@ func NewRegistry(localID enode.ID, delivery *Delivery, syncChunkStore storage.Sy
 	}
 
 	return streamer
+}
+
+// This is an accounted protocol, therefore we need to provide a pricing Hook to the spec
+// For simulations to be able to run multiple nodes and not override the hook's balance,
+// we need to construct a spec instance per node instance
+func (r *Registry) setupSpec() {
+	// first create the "bare" spec
+	r.createSpec()
+	// now create the pricing object
+	r.createPriceOracle()
+	// if balance is nil, this node has been started without swap support (swapEnabled flag is false)
+	if r.balance != nil && !reflect.ValueOf(r.balance).IsNil() {
+		// swap is enabled, so setup the hook
+		r.spec.Hook = protocols.NewAccounting(r.balance, r.prices)
+	}
 }
 
 // RegisterClient registers an incoming streamer constructor
@@ -337,14 +392,6 @@ func (r *Registry) Quit(peerId enode.ID, s Stream) error {
 	return peer.Send(context.TODO(), msg)
 }
 
-func (r *Registry) NodeInfo() interface{} {
-	return nil
-}
-
-func (r *Registry) PeerInfo(id enode.ID) interface{} {
-	return nil
-}
-
 func (r *Registry) Close() error {
 	return r.intervalsStore.Close()
 }
@@ -385,7 +432,7 @@ func (r *Registry) Run(p *network.BzzPeer) error {
 	defer close(sp.quit)
 	defer sp.close()
 
-	if r.doRetrieve {
+	if r.autoRetrieval && !p.LightNode {
 		err := r.Subscribe(p.ID(), NewStream(swarmChunkServerStreamName, "", true), nil, Top)
 		if err != nil {
 			return err
@@ -459,7 +506,7 @@ func (r *Registry) updateSyncing() {
 }
 
 func (r *Registry) runProtocol(p *p2p.Peer, rw p2p.MsgReadWriter) error {
-	peer := protocols.NewPeer(p, rw, Spec)
+	peer := protocols.NewPeer(p, rw, r.spec)
 	bp := network.NewBzzPeer(peer)
 	np := network.NewPeer(bp, r.delivery.kad)
 	r.delivery.kad.On(np)
@@ -489,8 +536,13 @@ func (p *Peer) HandleMsg(ctx context.Context, msg interface{}) error {
 	case *WantedHashesMsg:
 		return p.handleWantedHashesMsg(ctx, msg)
 
-	case *ChunkDeliveryMsg:
-		return p.streamer.delivery.handleChunkDeliveryMsg(ctx, p, msg)
+	case *ChunkDeliveryMsgRetrieval:
+		// handling chunk delivery is the same for retrieval and syncing, so let's cast the msg
+		return p.streamer.delivery.handleChunkDeliveryMsg(ctx, p, ((*ChunkDeliveryMsg)(msg)))
+
+	case *ChunkDeliveryMsgSyncing:
+		// handling chunk delivery is the same for retrieval and syncing, so let's cast the msg
+		return p.streamer.delivery.handleChunkDeliveryMsg(ctx, p, ((*ChunkDeliveryMsg)(msg)))
 
 	case *RetrieveRequestMsg:
 		return p.streamer.delivery.handleRetrieveRequestMsg(ctx, p, msg)
@@ -678,34 +730,89 @@ func (c *clientParams) clientCreated() {
 	close(c.clientCreatedC)
 }
 
-// Spec is the spec of the streamer protocol
-var Spec = &protocols.Spec{
-	Name:       "stream",
-	Version:    7,
-	MaxMsgSize: 10 * 1024 * 1024,
-	Messages: []interface{}{
-		UnsubscribeMsg{},
-		OfferedHashesMsg{},
-		WantedHashesMsg{},
-		TakeoverProofMsg{},
-		SubscribeMsg{},
-		RetrieveRequestMsg{},
-		ChunkDeliveryMsg{},
-		SubscribeErrorMsg{},
-		RequestSubscriptionMsg{},
-		QuitMsg{},
-	},
+// GetSpec returns the streamer spec to callers
+// This used to be a global variable but for simulations with
+// multiple nodes its fields (notably the Hook) would be overwritten
+func (r *Registry) GetSpec() *protocols.Spec {
+	return r.spec
+}
+
+func (r *Registry) createSpec() {
+	// Spec is the spec of the streamer protocol
+	var spec = &protocols.Spec{
+		Name:       "stream",
+		Version:    8,
+		MaxMsgSize: 10 * 1024 * 1024,
+		Messages: []interface{}{
+			UnsubscribeMsg{},
+			OfferedHashesMsg{},
+			WantedHashesMsg{},
+			TakeoverProofMsg{},
+			SubscribeMsg{},
+			RetrieveRequestMsg{},
+			ChunkDeliveryMsgRetrieval{},
+			SubscribeErrorMsg{},
+			RequestSubscriptionMsg{},
+			QuitMsg{},
+			ChunkDeliveryMsgSyncing{},
+		},
+	}
+	r.spec = spec
+}
+
+// An accountable message needs some meta information attached to it
+// in order to evaluate the correct price
+type StreamerPrices struct {
+	priceMatrix map[reflect.Type]*protocols.Price
+	registry    *Registry
+}
+
+// Price implements the accounting interface and returns the price for a specific message
+func (sp *StreamerPrices) Price(msg interface{}) *protocols.Price {
+	t := reflect.TypeOf(msg).Elem()
+	return sp.priceMatrix[t]
+}
+
+// Instead of hardcoding the price, get it
+// through a function - it could be quite complex in the future
+func (sp *StreamerPrices) getRetrieveRequestMsgPrice() uint64 {
+	return uint64(1)
+}
+
+// Instead of hardcoding the price, get it
+// through a function - it could be quite complex in the future
+func (sp *StreamerPrices) getChunkDeliveryMsgRetrievalPrice() uint64 {
+	return uint64(1)
+}
+
+// createPriceOracle sets up a matrix which can be queried to get
+// the price for a message via the Price method
+func (r *Registry) createPriceOracle() {
+	sp := &StreamerPrices{
+		registry: r,
+	}
+	sp.priceMatrix = map[reflect.Type]*protocols.Price{
+		reflect.TypeOf(ChunkDeliveryMsgRetrieval{}): {
+			Value:   sp.getChunkDeliveryMsgRetrievalPrice(), // arbitrary price for now
+			PerByte: true,
+			Payer:   protocols.Receiver,
+		},
+		reflect.TypeOf(RetrieveRequestMsg{}): {
+			Value:   sp.getRetrieveRequestMsgPrice(), // arbitrary price for now
+			PerByte: false,
+			Payer:   protocols.Sender,
+		},
+	}
+	r.prices = sp
 }
 
 func (r *Registry) Protocols() []p2p.Protocol {
 	return []p2p.Protocol{
 		{
-			Name:    Spec.Name,
-			Version: Spec.Version,
-			Length:  Spec.Length(),
+			Name:    r.spec.Name,
+			Version: r.spec.Version,
+			Length:  r.spec.Length(),
 			Run:     r.runProtocol,
-			// NodeInfo: ,
-			// PeerInfo: ,
 		},
 	}
 }

@@ -17,19 +17,17 @@ package stream
 
 import (
 	"context"
-	crand "crypto/rand"
 	"fmt"
-	"io"
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
-	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/simulations"
 	"github.com/ethereum/go-ethereum/p2p/simulations/adapters"
@@ -38,7 +36,9 @@ import (
 	"github.com/ethereum/go-ethereum/swarm/pot"
 	"github.com/ethereum/go-ethereum/swarm/state"
 	"github.com/ethereum/go-ethereum/swarm/storage"
-	mockdb "github.com/ethereum/go-ethereum/swarm/storage/mock/db"
+	"github.com/ethereum/go-ethereum/swarm/storage/mock"
+	mockmem "github.com/ethereum/go-ethereum/swarm/storage/mock/mem"
+	"github.com/ethereum/go-ethereum/swarm/testutil"
 )
 
 const MaxTimeout = 600
@@ -165,10 +165,10 @@ func streamerFunc(ctx *adapters.ServiceContext, bucket *sync.Map) (s node.Servic
 	netStore.NewNetFetcherFunc = network.NewFetcherFactory(dummyRequestFromPeers, true).New
 
 	r := NewRegistry(addr.ID(), delivery, netStore, state.NewInmemoryStore(), &RegistryOptions{
-		DoSync:          true,
-		DoServeRetrieve: true,
+		Retrieval:       RetrievalDisabled,
+		Syncing:         SyncingAutoSubscribe,
 		SyncUpdateDelay: 3 * time.Second,
-	})
+	}, nil)
 
 	bucket.Store(bucketKeyRegistry, r)
 
@@ -204,21 +204,23 @@ func testSyncingViaGlobalSync(t *testing.T, chunkCount int, nodeCount int) {
 	ctx, cancelSimRun := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancelSimRun()
 
-	if _, err := sim.WaitTillHealthy(ctx, 2); err != nil {
+	if _, err := sim.WaitTillHealthy(ctx); err != nil {
 		t.Fatal(err)
 	}
 
 	disconnections := sim.PeerEvents(
 		context.Background(),
 		sim.NodeIDs(),
-		simulation.NewPeerEventsFilter().Type(p2p.PeerEventTypeDrop),
+		simulation.NewPeerEventsFilter().Drop(),
 	)
 
+	var disconnected atomic.Value
 	go func() {
 		for d := range disconnections {
-			log.Error("peer drop", "node", d.NodeID, "peer", d.Event.Peer)
-			t.Fatal("unexpected disconnect")
-			cancelSimRun()
+			if d.Error != nil {
+				log.Error("peer drop", "node", d.NodeID, "peer", d.PeerID)
+				disconnected.Store(true)
+			}
 		}
 	}()
 
@@ -226,6 +228,9 @@ func testSyncingViaGlobalSync(t *testing.T, chunkCount int, nodeCount int) {
 
 	if result.Error != nil {
 		t.Fatal(result.Error)
+	}
+	if yes, ok := disconnected.Load().(bool); ok && yes {
+		t.Fatal("disconnect events received")
 	}
 	log.Info("Simulation ended")
 }
@@ -247,20 +252,20 @@ func runSim(conf *synctestConfig, ctx context.Context, sim *simulation.Simulatio
 
 		//get the node at that index
 		//this is the node selected for upload
-		node := sim.RandomUpNode()
-		item, ok := sim.NodeItem(node.ID, bucketKeyStore)
+		node := sim.Net.GetRandomUpNode()
+		item, ok := sim.NodeItem(node.ID(), bucketKeyStore)
 		if !ok {
 			return fmt.Errorf("No localstore")
 		}
 		lstore := item.(*storage.LocalStore)
-		hashes, err := uploadFileToSingleNodeStore(node.ID, chunkCount, lstore)
+		hashes, err := uploadFileToSingleNodeStore(node.ID(), chunkCount, lstore)
 		if err != nil {
 			return err
 		}
 		for _, h := range hashes {
 			evt := &simulations.Event{
 				Type: EventTypeChunkCreated,
-				Node: sim.Net.GetNode(node.ID),
+				Node: sim.Net.GetNode(node.ID()),
 				Data: h.String(),
 			}
 			sim.Net.Events().Send(evt)
@@ -270,20 +275,9 @@ func runSim(conf *synctestConfig, ctx context.Context, sim *simulation.Simulatio
 
 		// File retrieval check is repeated until all uploaded files are retrieved from all nodes
 		// or until the timeout is reached.
-		var gDir string
-		var globalStore *mockdb.GlobalStore
+		var globalStore mock.GlobalStorer
 		if *useMockStore {
-			gDir, globalStore, err = createGlobalStore()
-			if err != nil {
-				return fmt.Errorf("Something went wrong; using mockStore enabled but globalStore is nil")
-			}
-			defer func() {
-				os.RemoveAll(gDir)
-				err := globalStore.Close()
-				if err != nil {
-					log.Error("Error closing global store! %v", "err", err)
-				}
-			}()
+			globalStore = mockmem.NewGlobalStore()
 		}
 	REPEAT:
 		for {
@@ -341,6 +335,7 @@ assuming that the snapshot file identifies a healthy
 kademlia network. The snapshot should have 'streamer' in its service list.
 */
 func testSyncingViaDirectSubscribe(t *testing.T, chunkCount int, nodeCount int) error {
+
 	sim := simulation.New(map[string]simulation.ServiceFunc{
 		"streamer": func(ctx *adapters.ServiceContext, bucket *sync.Map) (s node.Service, cleanup func(), err error) {
 			n := ctx.Config.Node()
@@ -360,9 +355,9 @@ func testSyncingViaDirectSubscribe(t *testing.T, chunkCount int, nodeCount int) 
 			netStore.NewNetFetcherFunc = network.NewFetcherFactory(dummyRequestFromPeers, true).New
 
 			r := NewRegistry(addr.ID(), delivery, netStore, state.NewInmemoryStore(), &RegistryOptions{
-				DoServeRetrieve: true,
-				DoSync:          true,
-			})
+				Retrieval: RetrievalDisabled,
+				Syncing:   SyncingRegisterOnly,
+			}, nil)
 			bucket.Store(bucketKeyRegistry, r)
 
 			fileStore := storage.NewFileStore(netStore, storage.NewFileStoreParams())
@@ -396,21 +391,23 @@ func testSyncingViaDirectSubscribe(t *testing.T, chunkCount int, nodeCount int) 
 		return err
 	}
 
-	if _, err := sim.WaitTillHealthy(ctx, 2); err != nil {
+	if _, err := sim.WaitTillHealthy(ctx); err != nil {
 		return err
 	}
 
 	disconnections := sim.PeerEvents(
 		context.Background(),
 		sim.NodeIDs(),
-		simulation.NewPeerEventsFilter().Type(p2p.PeerEventTypeDrop),
+		simulation.NewPeerEventsFilter().Drop(),
 	)
 
+	var disconnected atomic.Value
 	go func() {
 		for d := range disconnections {
-			log.Error("peer drop", "node", d.NodeID, "peer", d.Event.Peer)
-			t.Fatal("unexpected disconnect")
-			cancelSimRun()
+			if d.Error != nil {
+				log.Error("peer drop", "node", d.NodeID, "peer", d.PeerID)
+				disconnected.Store(true)
+			}
 		}
 	}()
 
@@ -429,7 +426,7 @@ func testSyncingViaDirectSubscribe(t *testing.T, chunkCount int, nodeCount int) 
 
 		var subscriptionCount int
 
-		filter := simulation.NewPeerEventsFilter().Type(p2p.PeerEventTypeMsgRecv).Protocol("stream").MsgCode(4)
+		filter := simulation.NewPeerEventsFilter().ReceivedMessages().Protocol("stream").MsgCode(4)
 		eventC := sim.PeerEvents(ctx, nodeIDs, filter)
 
 		for j, node := range nodeIDs {
@@ -461,31 +458,26 @@ func testSyncingViaDirectSubscribe(t *testing.T, chunkCount int, nodeCount int) 
 			}
 		}
 		//select a random node for upload
-		node := sim.RandomUpNode()
-		item, ok := sim.NodeItem(node.ID, bucketKeyStore)
+		node := sim.Net.GetRandomUpNode()
+		item, ok := sim.NodeItem(node.ID(), bucketKeyStore)
 		if !ok {
 			return fmt.Errorf("No localstore")
 		}
 		lstore := item.(*storage.LocalStore)
-		hashes, err := uploadFileToSingleNodeStore(node.ID, chunkCount, lstore)
+		hashes, err := uploadFileToSingleNodeStore(node.ID(), chunkCount, lstore)
 		if err != nil {
 			return err
 		}
 		conf.hashes = append(conf.hashes, hashes...)
 		mapKeysToNodes(conf)
 
-		if _, err := sim.WaitTillHealthy(ctx, 2); err != nil {
+		if _, err := sim.WaitTillHealthy(ctx); err != nil {
 			return err
 		}
 
-		var gDir string
-		var globalStore *mockdb.GlobalStore
+		var globalStore mock.GlobalStorer
 		if *useMockStore {
-			gDir, globalStore, err = createGlobalStore()
-			if err != nil {
-				return fmt.Errorf("Something went wrong; using mockStore enabled but globalStore is nil")
-			}
-			defer os.RemoveAll(gDir)
+			globalStore = mockmem.NewGlobalStore()
 		}
 		// File retrieval check is repeated until all uploaded files are retrieved from all nodes
 		// or until the timeout is reached.
@@ -530,6 +522,9 @@ func testSyncingViaDirectSubscribe(t *testing.T, chunkCount int, nodeCount int) 
 		return result.Error
 	}
 
+	if yes, ok := disconnected.Load().(bool); ok && yes {
+		t.Fatal("disconnect events received")
+	}
 	log.Info("Simulation ended")
 	return nil
 }
@@ -568,9 +563,7 @@ func mapKeysToNodes(conf *synctestConfig) {
 		np, _, _ = pot.Add(np, a, pof)
 	}
 
-	var kadMinProxSize = 2
-
-	ppmap := network.NewPeerPotMap(kadMinProxSize, conf.addrs)
+	ppmap := network.NewPeerPotMap(network.NewKadParams().NeighbourhoodSize, conf.addrs)
 
 	//for each address, run EachNeighbour on the chunk hashes pot to identify closest nodes
 	log.Trace(fmt.Sprintf("Generated hash chunk(s): %v", conf.hashes))
@@ -603,7 +596,7 @@ func uploadFileToSingleNodeStore(id enode.ID, chunkCount int, lstore *storage.Lo
 	size := chunkSize
 	var rootAddrs []storage.Address
 	for i := 0; i < chunkCount; i++ {
-		rk, wait, err := fileStore.Store(context.TODO(), io.LimitReader(crand.Reader, int64(size)), int64(size), false)
+		rk, wait, err := fileStore.Store(context.TODO(), testutil.RandomReader(i, size), int64(size), false)
 		if err != nil {
 			return nil, err
 		}

@@ -22,11 +22,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"errors"
-	"fmt"
-	syslog "log/syslog"
 	"net"
-	"os"
-	"runtime"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -190,7 +186,6 @@ type Server struct {
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
 	log           log.Logger
-	logPeer       log.Logger
 }
 
 type peerOpFunc func(map[enode.ID]*Peer)
@@ -232,7 +227,7 @@ type transport interface {
 	MsgReadWriter
 	// transports must provide Close because we use MsgPipe in some of
 	// the tests. Closing the actual network connection doesn't do
-	// anything in those tests because NsgPipe doesn't use it.
+	// anything in those tests because MsgPipe doesn't use it.
 	close(err error)
 }
 
@@ -395,7 +390,7 @@ type sharedUDPConn struct {
 func (s *sharedUDPConn) ReadFromUDP(b []byte) (n int, addr *net.UDPAddr, err error) {
 	packet, ok := <-s.unhandled
 	if !ok {
-		return 0, nil, fmt.Errorf("Connection was closed")
+		return 0, nil, errors.New("Connection was closed")
 	}
 	l := len(packet.Data)
 	if l > len(b) {
@@ -423,27 +418,13 @@ func (srv *Server) Start() (err error) {
 	if srv.log == nil {
 		srv.log = log.New()
 	}
-	if srv.logPeer == nil {
-		srv.logPeer = log.New()
-	}
-
-	var handler log.Handler
-	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL0, "EMC-GETH", log.EmcFormat(false))
-	srv.logPeer.SetHandler(handler)
-
-	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
-	if runtime.GOOS == "darwin" { // OSX - local ...
-		srv.logPeer.SetHandler(handlerOSX)
-		srv.logPeer.SetHandler(handlerOSX)
-	}
-
 	if srv.NoDial && srv.ListenAddr == "" {
 		srv.log.Warn("P2P server will be useless, neither dialing nor listening")
 	}
 
 	// static fields
 	if srv.PrivateKey == nil {
-		return fmt.Errorf("Server.PrivateKey must be set to a non-nil key")
+		return errors.New("Server.PrivateKey must be set to a non-nil key")
 	}
 	if srv.newTransport == nil {
 		srv.newTransport = newRLPX
@@ -750,21 +731,11 @@ running:
 				}
 				name := truncateName(c.name)
 				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
-
 				go srv.runPeer(p)
 				peers[c.node.ID()] = p
 				if p.Inbound() {
 					inboundCount++
 				}
-
-				srv.logPeer.Info("Adding Peer",
-					"LocalTimestamp", time.Now(),
-					"Type", "Add",
-					"ID", p.ID(),
-					"client", name, // client type (geth/parity..)
-					"addr", c.fd.RemoteAddr(),
-					"peers", len(peers),
-					"inbound", inboundCount)
 			}
 			// The dialer logic relies on the assumption that
 			// dial tasks complete after the peer has been added or
@@ -778,19 +749,10 @@ running:
 			// A peer disconnected.
 			d := common.PrettyDuration(mclock.Now() - pd.created)
 			pd.log.Debug("Removing p2p peer", "duration", d, "peers", len(peers)-1, "req", pd.requested, "err", pd.err)
-
 			delete(peers, pd.ID())
 			if pd.Inbound() {
 				inboundCount--
 			}
-			srv.logPeer.Info("Removing Peer",
-				"LocalTimestamp", time.Now(),
-				"Type", "Remove",
-				"ID", pd.ID(),
-				"duration", d,
-				"err", pd.err,
-				"peers", len(peers),
-				"inbound", inboundCount)
 		}
 	}
 
@@ -940,7 +902,7 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *enode.Node) erro
 	if dialDest != nil {
 		dialPubkey = new(ecdsa.PublicKey)
 		if err := dialDest.Load((*enode.Secp256k1)(dialPubkey)); err != nil {
-			return fmt.Errorf("dial destination doesn't have a secp256k1 public key")
+			return errors.New("dial destination doesn't have a secp256k1 public key")
 		}
 	}
 	// Run the encryption handshake.
@@ -974,7 +936,7 @@ func (srv *Server) setupConn(c *conn, flags connFlag, dialDest *enode.Node) erro
 		return err
 	}
 	if id := c.node.ID(); !bytes.Equal(crypto.Keccak256(phs.ID), id[:]) {
-		clog.Trace("Wrong devp2p handshake identity", "phsid", fmt.Sprintf("%x", phs.ID))
+		clog.Trace("Wrong devp2p handshake identity", "phsid", hex.EncodeToString(phs.ID))
 		return DiscUnexpectedIdentity
 	}
 	c.caps, c.name = phs.Caps, phs.Name

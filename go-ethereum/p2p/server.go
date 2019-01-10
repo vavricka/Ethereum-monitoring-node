@@ -22,7 +22,10 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"errors"
+	syslog "log/syslog"
 	"net"
+	"os"
+	"runtime"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -186,6 +189,7 @@ type Server struct {
 	loopWG        sync.WaitGroup // loop, listenLoop
 	peerFeed      event.Feed
 	log           log.Logger
+	logPeer       log.Logger
 }
 
 type peerOpFunc func(map[enode.ID]*Peer)
@@ -417,6 +421,18 @@ func (srv *Server) Start() (err error) {
 	srv.log = srv.Config.Logger
 	if srv.log == nil {
 		srv.log = log.New()
+	}
+	if srv.logPeer == nil {
+		srv.logPeer = log.New()
+	}
+
+	var handler log.Handler
+	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL0, "EMC-GETH", log.EmcFormat(false))
+	srv.logPeer.SetHandler(handler)
+
+	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
+	if runtime.GOOS == "darwin" { // OSX - local ...
+		srv.logPeer.SetHandler(handlerOSX)
 	}
 	if srv.NoDial && srv.ListenAddr == "" {
 		srv.log.Warn("P2P server will be useless, neither dialing nor listening")
@@ -736,6 +752,16 @@ running:
 				if p.Inbound() {
 					inboundCount++
 				}
+
+				srv.logPeer.Info("Adding Peer",
+					"LocalTimestamp", time.Now(),
+					"Type", "Add",
+					"ID", p.ID(),
+					"client", name, // client type (geth/parity..)
+					"addr", c.fd.RemoteAddr(),
+					"peers", len(peers),
+					"inbound", inboundCount)
+
 			}
 			// The dialer logic relies on the assumption that
 			// dial tasks complete after the peer has been added or
@@ -753,6 +779,14 @@ running:
 			if pd.Inbound() {
 				inboundCount--
 			}
+			srv.logPeer.Info("Removing Peer",
+				"LocalTimestamp", time.Now(),
+				"Type", "Remove",
+				"ID", pd.ID(),
+				"duration", d,
+				"err", pd.err,
+				"peers", len(peers),
+				"inbound", inboundCount)
 		}
 	}
 

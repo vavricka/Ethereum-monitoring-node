@@ -229,7 +229,7 @@ func (pm *ProtocolManager) Log(msgType int) log.Logger {
 		return pm.logNewBlockHashesMsg
 	case NewBlockMsg:
 		return pm.logNewBlockMsg
-	case InvalidMsg:
+	case 5:
 		return pm.logInvalidMsg
 	default:
 		panic("Invalid Log Handler")
@@ -383,7 +383,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return err
 	}
 	if msg.Size > ProtocolMaxMsgSize {
-		pm.Log(InvalidMsg).Info("UnknownMsgType",
+		pm.Log(5).Info("UnknownMsgType",
 			"LocalTimestamp", msg.ReceivedAt,
 			"MessageType", "UnknownType",
 			"Cause", "001") // 001 = ErrMsgTooLarge
@@ -395,7 +395,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	switch {
 	case msg.Code == StatusMsg:
 		// Status messages should never arrive after the handshake
-		pm.Log(InvalidMsg).Info("StatusMsg",
+		pm.Log(5).Info("StatusMsg",
 			"LocalTimestamp", msg.ReceivedAt,
 			"MessageType", "StatusMsg",
 			"Cause", "002") // 002 = uncontrolled status message
@@ -407,7 +407,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		var query getBlockHeadersData
 		if err := msg.Decode(&query); err != nil {
 			//errMsg := fmt.Sprintf("%v: %v", msg, err)
-			pm.Log(InvalidMsg).Info("GetBlockHeadersMsg",
+			pm.Log(5).Info("GetBlockHeadersMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "GetBlockHeadersMsg",
 				"Cause", "003") // 003 = Decoding Failed
@@ -465,7 +465,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				if next <= current {
 					infos, _ := json.MarshalIndent(p.Peer.Info(), "", "  ")
 					p.Log().Warn("GetBlockHeaders skip overflow attack", "current", current, "skip", query.Skip, "next", next, "attacker", infos)
-					pm.Log(InvalidMsg).Info("GetBlockHeadersMsg",
+					pm.Log(5).Info("GetBlockHeadersMsg",
 						"LocalTimestamp", msg.ReceivedAt,
 						"MessageType", "GetBlockHeadersMsg",
 						"Cause", "004") // 004 = skip overflow attack
@@ -502,7 +502,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// A batch of headers arrived to one of our previous requests
 		var headers []*types.Header
 		if err := msg.Decode(&headers); err != nil {
-			pm.Log(InvalidMsg).Info("BlockHeadersMsg",
+			pm.Log(5).Info("BlockHeadersMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "BlockHeadersMsg",
 				"Cause", "005") // 005 = Decoding Failed
@@ -522,7 +522,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			}
 			// If we're seemingly on the same chain, disable the drop timer
 			if verifyDAO {
-				pm.Log(InvalidMsg).Info("BlockHeadersMsg",
+				pm.Log(5).Info("BlockHeadersMsg",
 					"LocalTimestamp", msg.ReceivedAt,
 					"MessageType", "BlockHeadersMsg",
 					"Cause", "006") // 006 = verifyDAO failed
@@ -544,7 +544,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				// Validate the header and either drop the peer or continue
 				if err := misc.VerifyDAOHeaderExtraData(pm.chainconfig, headers[0]); err != nil {
 					p.Log().Debug("Verified to be on the other side of the DAO fork, dropping")
-					pm.Log(InvalidMsg).Info("BlockHeadersMsg",
+					pm.Log(5).Info("BlockHeadersMsg",
 						"LocalTimestamp", msg.ReceivedAt,
 						"MessageType", "BlockHeadersMsg",
 						"Cause", "007") // 007 = Other side of the DAO fork
@@ -588,7 +588,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			if err := msgStream.Decode(&hash); err == rlp.EOL {
 				break
 			} else if err != nil {
-				pm.Log(InvalidMsg).Info("GetBlockBodiesMsg",
+				pm.Log(5).Info("GetBlockBodiesMsg",
 					"LocalTimestamp", msg.ReceivedAt,
 					"MessageType", "GetBlockBodiesMsg",
 					"Cause", "008") // 008 = Decoding Failed
@@ -606,7 +606,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// A batch of block bodies arrived to one of our previous requests
 		var request blockBodiesData
 		if err := msg.Decode(&request); err != nil {
-			pm.Log(InvalidMsg).Info("BlockBodiesMsg",
+			pm.Log(5).Info("BlockBodiesMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "BlockBodiesMsg",
 				"Cause", "009") // 009 = Decoding Failed
@@ -636,7 +636,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Decode the retrieval message
 		msgStream := rlp.NewStream(msg.Payload, uint64(msg.Size))
 		if _, err := msgStream.List(); err != nil {
-			pm.Log(InvalidMsg).Info("GetNodeDataMsg",
+			pm.Log(5).Info("GetNodeDataMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "GetNodeDataMsg",
 				"Cause", "010") // 010 = Generic Error
@@ -667,7 +667,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// A batch of node state data arrived to one of our previous requests
 		var data [][]byte
 		if err := msg.Decode(&data); err != nil {
-			pm.Log(InvalidMsg).Info("NodeDataMsg",
+			pm.Log(5).Info("NodeDataMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "NodeDataMsg",
 				"Cause", "011") // 011 = Decoding Failed
@@ -728,7 +728,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 	case msg.Code == NewBlockHashesMsg:
 		var announces newBlockHashesData
 		if err := msg.Decode(&announces); err != nil {
-			pm.Log(InvalidMsg).Info("NewBlockHashesMsg",
+			pm.Log(5).Info("NewBlockHashesMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "NewBlockHashesMsg",
 				"Cause", "012") // 012 = Decoding Error
@@ -756,7 +756,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Retrieve and decode the propagated block
 		var request newBlockData
 		if err := msg.Decode(&request); err != nil {
-			pm.Log(InvalidMsg).Info("NewBlockMsg",
+			pm.Log(5).Info("NewBlockMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "NewBlockMsg",
 				"Cause", "013") // 013 = Decoding Error
@@ -832,7 +832,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Transactions can be processed, parse all of them and deliver to the pool
 		var txs []*types.Transaction
 		if err := msg.Decode(&txs); err != nil {
-			pm.Log(InvalidMsg).Info("TxMsg",
+			pm.Log(5).Info("TxMsg",
 				"LocalTimestamp", msg.ReceivedAt,
 				"MessageType", "TxMsg",
 				"Cause", "014") // 014 = Decoding Error

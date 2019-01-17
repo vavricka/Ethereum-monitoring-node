@@ -3,7 +3,7 @@
 import pandas as pd
 
 NEWBLOCK_CSV =  "blocks.csv"
-NEWBLOCKHASHES_CSV = "blockAnnouncements.csv"
+NEWBLOCKHASHES_CSV = "blocksAnnouncements.csv"
 
 #read file into a DataFrame
 blck1 = pd.read_csv(NEWBLOCK_CSV, usecols=['BlockHash'])

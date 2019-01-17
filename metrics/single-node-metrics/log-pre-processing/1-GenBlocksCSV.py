@@ -6,7 +6,7 @@ import numpy as np
 
 
 NEWBLOCK_CSV = "blocks.csv"
-NEWBLOCKHASHES_CSV = "blockAnnouncements.csv"
+NEWBLOCKHASHES_CSV = "blocksAnnouncements.csv"
 NEWBLOCKHEADS_CSV = "heads.csv"
 
 BLOCKS_CSV = "blocksFinal.csv"

@@ -27,6 +27,7 @@ import (
 	"os"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -745,7 +746,8 @@ running:
 				if srv.EnableMsgEvents {
 					p.events = &srv.peerFeed
 				}
-				name := truncateName(c.name)
+				//name := truncateName(c.name)
+				name := replaceCommas(c.name)
 				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
 				go srv.runPeer(p)
 				peers[c.node.ID()] = p
@@ -1000,6 +1002,12 @@ func truncateName(s string) string {
 		return s[:20] + "..."
 	}
 	return s
+}
+
+// replaceCommas substitutes commas with semicolons
+// because the output is passed to a .csv file
+func replaceCommas(s string) string {
+	return strings.Replace(s, ",", ";", -1)
 }
 
 // checkpoint sends the conn to run, which performs the

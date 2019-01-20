@@ -191,6 +191,7 @@ type Server struct {
 	peerFeed      event.Feed
 	log           log.Logger
 	logPeer       log.Logger
+	logAux        log.Logger
 }
 
 type peerOpFunc func(map[enode.ID]*Peer)
@@ -426,14 +427,22 @@ func (srv *Server) Start() (err error) {
 	if srv.logPeer == nil {
 		srv.logPeer = log.New()
 	}
+	if srv.logAux == nil {
+		srv.logAux = log.New()
+	}
 
 	var handler log.Handler
 	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL0, "EMC-GETH", log.EmcFormat(false))
 	srv.logPeer.SetHandler(handler)
 
+	var handlerAux log.Handler
+	handlerAux, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL6, "EMC-GETH", log.EmcFormat(false))
+	srv.logAux.SetHandler(handlerAux)
+
 	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
 	if runtime.GOOS == "darwin" { // OSX - local ...
 		srv.logPeer.SetHandler(handlerOSX)
+		srv.logAux.SetHandler(handlerOSX)
 	}
 	if srv.NoDial && srv.ListenAddr == "" {
 		srv.log.Warn("P2P server will be useless, neither dialing nor listening")
@@ -620,6 +629,12 @@ type dialer interface {
 
 func (srv *Server) run(dialstate dialer) {
 	srv.log.Info("Started P2P networking", "self", srv.localnode.Node())
+
+	srv.logAux.Info("Started-p2p-Networking",
+		"LocalTimestamp", time.Now(),
+		"Node", srv.localnode.Node(),
+		"ID", srv.localnode.ID())
+
 	defer srv.loopWG.Done()
 	defer srv.nodedb.Close()
 

@@ -1,0 +1,8 @@
+(1) go to the folder with all the txs.log.xx files
+
+(2) copy there concatLogs.sh, dropDuplicates.py, dropDuplicates.sh
+
+(3) run:
+$ sudo dropDuplicates.sh
+
+(Result) it will create one final unique-txs.log.FINAL

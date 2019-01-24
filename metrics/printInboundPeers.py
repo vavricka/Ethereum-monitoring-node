@@ -2,15 +2,16 @@
 
 import pandas as pd
 
-PEERS_CSV = "peers.csv"
+PEERS_LOG = "peers.log"
 PEERSNEW_CSV = "peersnew.csv"
 
-peers = pd.read_csv(PEERS_CSV)
+peers = pd.read_csv(PEERS_LOG,
+        names=['LocalTimeStamp','Type','ID','TypeDependentParam1',
+        'TypeDependentParam2','Peers','InboundPeers'])
 
 # loop rows, print rows where inboundPeers changes
 inboundPeers = 0
 peers_new = pd.DataFrame(data=None, columns=peers.columns)
-peers_new.set_index('LocalTimeStamp',inplace=True)
 
 for index, row in peers.iterrows():
     if row['InboundPeers'] != inboundPeers:

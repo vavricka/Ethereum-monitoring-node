@@ -7,7 +7,6 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
-#TXS_LOG= "txs.log.12"
 TXS_LOG= "unique-unique-txs.log.FINAL"
 
 #txs = pd.read_csv(TX_CSV, usecols=['MsgType', 'GasLimit'])

@@ -17,6 +17,10 @@
 package core
 
 import (
+	syslog "log/syslog"
+	"os"
+	"runtime"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/misc"
@@ -24,6 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -35,15 +40,31 @@ type StateProcessor struct {
 	config *params.ChainConfig // Chain configuration options
 	bc     *BlockChain         // Canonical block chain
 	engine consensus.Engine    // Consensus engine used for block rewards
+
+	// EMC logging
+	logTx log.Logger
 }
 
 // NewStateProcessor initialises a new StateProcessor.
 func NewStateProcessor(config *params.ChainConfig, bc *BlockChain, engine consensus.Engine) *StateProcessor {
-	return &StateProcessor{
+
+	p := &StateProcessor{
 		config: config,
 		bc:     bc,
 		engine: engine,
 	}
+
+	p.logTx = log.New()
+	var handler log.Handler
+	handler, _ = log.SyslogHandler(syslog.LOG_INFO|syslog.LOG_LOCAL4, "EMC-GETH", log.EmcFormat(false))
+	p.logTx.SetHandler(handler)
+	var handlerOSX = log.StreamHandler(os.Stderr, log.EmcFormat(false))
+	if runtime.GOOS == "darwin" { // OSX - local ...
+		p.logTx.SetHandler(handlerOSX)
+	}
+
+	return p
+
 }
 
 // Process processes the state changes according to the Ethereum rules by running
@@ -70,8 +91,20 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 		statedb.Prepare(tx.Hash(), block.Hash(), i)
 		receipt, _, err := ApplyTransaction(p.config, p.bc, nil, gp, statedb, header, tx, usedGas, cfg)
 		if err != nil {
+
+			// GasUsed  -1 -> failed
+			p.logTx.Info("TxGasUsed",
+				"BlockHash", block.Hash(),
+				"TxHash", tx.Hash(),
+				"TxGasUsed", "-1")
 			return nil, nil, 0, err
 		}
+
+		p.logTx.Info("TxGasUsed",
+			"BlockHash", block.Hash(),
+			"TxHash", tx.Hash(),
+			"TxGasUsed", tx.Gas())
+
 		receipts = append(receipts, receipt)
 		allLogs = append(allLogs, receipt.Logs...)
 	}

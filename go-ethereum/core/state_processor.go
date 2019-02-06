@@ -92,11 +92,11 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 		receipt, _, err := ApplyTransaction(p.config, p.bc, nil, gp, statedb, header, tx, usedGas, cfg)
 		if err != nil {
 
-			// GasUsed  -1 -> failed
+			// GasUsed  "" -> failed
 			p.logTx.Info("TxGasUsed",
 				"BlockHash", block.Hash(),
 				"TxHash", tx.Hash(),
-				"TxGasUsed", "-1")
+				"TxGasUsed", "")
 			return nil, nil, 0, err
 		}
 

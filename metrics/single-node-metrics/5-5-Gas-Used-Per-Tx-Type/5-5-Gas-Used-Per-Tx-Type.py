@@ -7,16 +7,27 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
-TXS_LOG= "unique-unique-txs.log.FINAL"
+#TXS_LOG= "unique-unique-txs.log.FINAL"
+TXS_LOG="unique-unique-txs-with-gasused.log"
 
 #txs = pd.read_csv(TX_CSV, usecols=['MsgType', 'GasLimit'])
 txs = pd.read_csv(TXS_LOG, 
 names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
-'Cost','Size','To','From','ValidityErr'], usecols=['MsgType', 'GasLimit'])
+'Cost','Size','To','From','ValidityErr','GasUsed'], usecols=['MsgType', 'ValidityErr', 'GasUsed'])
 
-s_tx = txs[txs.MsgType == "TX"].GasLimit
-s_mc = txs[txs.MsgType == "MC"].GasLimit
-s_cc = txs[txs.MsgType == "CC"].GasLimit
+# print  txs before drop
+print("Txs TOTAL: ", len(txs.index))
+# drop txs w/ GasUsed   nil or -1,  validityErr != nil
+condition = txs[ (txs['GasUsed'] == -1) | (txs['GasUsed'].isnull()) | (txs['ValidityErr'] != "nil") ].index
+txs.drop(condition , inplace=True)
+
+# print  txs after drop
+print("Txs TOTAL (after drop): ", len(txs.index))
+
+
+s_tx = txs[txs.MsgType == "TX"].GasUsed
+s_mc = txs[txs.MsgType == "MC"].GasUsed
+s_cc = txs[txs.MsgType == "CC"].GasUsed
 
 bin_seq = list(range(0,8000000,20)) 
 

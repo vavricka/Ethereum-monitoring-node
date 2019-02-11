@@ -4,12 +4,14 @@ import pandas as pd
 import numpy as np
 
 
-
-NEWBLOCK_CSV = "blocks.csv"
+NEWBLOCK_CSV = "unique-blocks.csv" #new blocks, w/o duplicates
 NEWBLOCKHASHES_CSV = "blocksAnnouncements.csv"
 NEWBLOCKHEADS_CSV = "heads.csv"
 
 BLOCKS_CSV = "blocksFinal.csv"
+
+
+# todo  REDO from here....
 
 # NewBlockMsg -- remove rows with
 blck1 = pd.read_csv(NEWBLOCK_CSV, index_col=0)

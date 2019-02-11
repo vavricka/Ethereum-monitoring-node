@@ -1,0 +1,8 @@
+(1) go to the folder with all the blocks.log.xx files
+
+(2) copy there concatLogs.sh, blocks-dropDuplicates.py, blocks-dropDuplicates.sh
+
+(3) run:
+$ sudo bash blocks-dropDuplicates.sh
+
+(Result) it will create one final unique-blocks.log.FINAL

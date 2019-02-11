@@ -32,10 +32,10 @@ do
         break
     fi
 
-    sudo python3 dropDuplicates.py $LOG_NAME.$NUM
+    sudo python3 txs-dropDuplicates.py $LOG_NAME.$NUM
     NUM=$((NUM+1))
 done
-sudo python3 dropDuplicates.py $LOG_NAME
+sudo python3 txs-dropDuplicates.py $LOG_NAME
 
 # step 2 - concatenate the unique-txs.log.x ... into one
 sudo touch $UNIQUE_LOG.FINAL
@@ -53,4 +53,4 @@ done
 cat $UNIQUE_LOG >> $UNIQUE_LOG.FINAL
 
 # step 3 - call dropDuplicates on the final unique-txs.log...
-sudo python3 dropDuplicates.py $UNIQUE_LOG.FINAL
+sudo python3 txs-dropDuplicates.py $UNIQUE_LOG.FINAL

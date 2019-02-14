@@ -9,9 +9,9 @@
 #start debugging from here
 set -x
 
-#LOG_NAME="$1"   # log file's full path - e.g.  "/var/log/unique-blocks.log"
-LOG_NAME="blocks.log"
-UNIQUE_LOG="unique-blocks.log"
+
+LOG_NAME="$1".log  #pass blocks (blocks.log)   or blocksAnnouncements (blocksAnnouncements.log)
+UNIQUE_LOG="unique-"$1   #check  .....   unique-blocks.log
 NUM=0
 
 if [ ! -f "$LOG_NAME" ] ; then
@@ -32,10 +32,10 @@ do
         break
     fi
 
-    sudo python3 blocks-dropDuplicates.py $LOG_NAME.$NUM
+    sudo python3 "$1"-dropDuplicates.py $LOG_NAME.$NUM
     NUM=$((NUM+1))
 done
-sudo python3 blocks-dropDuplicates.py $LOG_NAME
+sudo python3 "$1"-dropDuplicates.py $LOG_NAME
 
 # step 2 - concatenate the unique-txs.log.x ... into one
 sudo touch $UNIQUE_LOG.FINAL
@@ -53,4 +53,4 @@ done
 cat $UNIQUE_LOG >> $UNIQUE_LOG.FINAL
 
 # step 3 - call dropDuplicates on the final unique-txs.log...
-sudo python3 blocks-dropDuplicates.py $UNIQUE_LOG.FINAL
+sudo python3 "$1"-dropDuplicates.py $UNIQUE_LOG.FINAL

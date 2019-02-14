@@ -2,7 +2,28 @@
 
 (2) copy there concatLogs.sh, blocks-dropDuplicates.py, blocks-dropDuplicates.sh
 
-(3) run:
-$ sudo bash blocks-dropDuplicates.sh
-
+(3a) run:
+$ sudo bash dropDuplicates.sh blocks
 (Result) it will create one final unique-blocks.log.FINAL
+
+(3b) run:
+$ sudo bash dropDuplicates.sh blocksAnnouncements
+(Result) it will create one final unique-blockAnnouncements.log.FINAL
+
+(4)
+concatebate heads.log.*  into one
+!! manually delete first couple of logs from heads.log   -->  till it syncs
+
+
+(5) sudo python3 MergeBlocks.py  
+a) this sets the lowest timestamp of block reception (from both blocks.log and blocksAnnouncements.log)
+b) goes through heads.log and marks BlockType in blocks.log which blocks are on MAIN blockchain and which are Uncles
+produces blocksMergedCheckManuallyNow.log    that may contain BlockType==nan or "CheckManually"
+
+(6) 
+python 3 BlockTypes.py   -> to show if there is need to check the block manually 
+
+(7) manually set the blocks with  BlockType==nan or "CheckManually"  to Main/Uncle
+
+(8) sudo python3 MergeBlocks-2.py 
+that sets Uncles into  Recognized or Unrecognized..

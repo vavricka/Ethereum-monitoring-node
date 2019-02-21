@@ -1,0 +1,21 @@
+(1) take all txgasused.log* and concatenate them into one FINAL file
+(2) take all txs.log* and concatenate them into one FINAL file (unique-unique-txs.log.FINAL)
+
+(3)  $python3 5-5-preprocessing-setGasUsed.py
+ - this creates unique-unique-txs-with-gasused.log
+ - that contains all lines from unique-unique-txs.log.FINAL
+ - but adds one field "GausUsed" for all valid transactions that were
+ - included in txgasused.log.FINAL
+
+ (4) (optional) $python3 5-5-aux-gasUsedInfo.py
+  - This shows some auxiliary info about the txs-logs and the GasUsed propery.
+  - How many txs have GaseUsed set and how many not.
+  - Out of the txs without GasUsed how many were not valid transactions.
+  - How many were valid transaction (in this case they have gasUsed not set
+    because they simply were not for some reason included in txgasused.log - i.e.
+    were not executed by our geth client)
+  - It also creates a pie plot with these info.. '5-5-AUX-Pie.pdf'
+
+(5) $python3 5-5-Gas-Used-Per-Tx-Type.py
+ - takes the log from (3) and produces the 5-5 metric in the form of a plot
+ - '5-5-txs-gasUsed.pdf'

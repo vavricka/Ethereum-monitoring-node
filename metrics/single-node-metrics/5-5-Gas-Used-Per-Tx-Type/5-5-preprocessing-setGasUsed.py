@@ -2,8 +2,8 @@
 import pandas as pd
 import numpy as np
 
-TXS_GAS_LOG = "txgasused.log"
-TXS_LOG = "unique-unique-txs.log"
+TXS_GAS_LOG = "txgasused.log.FINAL" #txgasused.log* logs concatenated
+TXS_LOG = "unique-unique-txs.log.FINAL"
 TXS_OUT="unique-unique-txs-with-gasused.log"
 
 # load txgasused only txhash and its gasuded
@@ -12,12 +12,11 @@ txsgas = pd.read_csv(TXS_GAS_LOG,
 
 #sort by txhash
 txsgas = txsgas.sort_values(by=['TxHash'])
-#print(txsgas)
 
 #load uniquetxs
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
-   'Cost','Size','To','From','ValidityErr'])
+   'Cost','Size','To','From','ValidityErr'], index_col=False)
 
 #add gasused column
 txs["GasUsed"] = ""
@@ -28,13 +27,12 @@ for i, row in txs.iterrows():
     #  chceck if txhash   is in   txgasused.log   SET   else   NA
     if row['ValidityErr'] == 'nil':
         line = txsgas['TxHash'].searchsorted(row['Hash']) 
-        curLineTxGas = txsgas.iloc[line]
 
-        if row['Hash'] == curLineTxGas['TxHash'].iloc[0]:
-            tmpGasUsed = curLineTxGas['GasUsed'].iloc[0]
+        if row['Hash'] == txsgas.iloc[line][0]:
+            tmpGasUsed = txsgas.iloc[line][1]
 
             if tmpGasUsed != -1:
-                txs.at[i,'GasUsed'] = tmpGasUsed
+                txs.at[i, 'GasUsed'] = tmpGasUsed
 
         else:  
             pass

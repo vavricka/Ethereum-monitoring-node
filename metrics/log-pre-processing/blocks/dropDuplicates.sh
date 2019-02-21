@@ -1,5 +1,5 @@
 #!/bin/sh
-# bash dropDuplicates 
+# pass one parameter, either 'blocksAnnouncements' or 'blocks'  !!!
 
 # 3 steps in total
 # step 1 - separately call dropDuplicates in each txs.log.x  and produce uniqe-txs.log.x
@@ -9,9 +9,8 @@
 #start debugging from here
 set -x
 
-
 LOG_NAME="$1".log  #pass blocks (blocks.log)   or blocksAnnouncements (blocksAnnouncements.log)
-UNIQUE_LOG="unique-"$1   #check  .....   unique-blocks.log
+UNIQUE_LOG="unique-"$1".log"  #check  .....   unique-blocks.log
 NUM=0
 
 if [ ! -f "$LOG_NAME" ] ; then

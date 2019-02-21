@@ -1,19 +1,18 @@
 (1) go to the folder with all the blocks.log.xx files
 
-(2) copy there ../concatLogs.sh, blocks-dropDuplicates.py, blocks-dropDuplicates.sh
+(2) copy there ../concatLogs.sh, and all scripts from this folder
 
 (3a) run:
-$ sudo bash dropDuplicates.sh blocks
+$ sudo python3 blocks-dropDuplicates.py blocks.log
 (Result) it will create one final unique-blocks.log.FINAL
 
 (3b) run:
-$ sudo bash dropDuplicates.sh blocksAnnouncements
+$ sudo python3 blocksAnnouncements-dropDuplicates.py blocksAnnouncements.log
 (Result) it will create one final unique-blockAnnouncements.log.FINAL
 
-(4)
-concatebate heads.log.*  into one
-!! manually delete first couple of logs from heads.log   -->  till it syncs
-
+(4) concatenate heads.log.*  into one
+$ sudo bash concatLogs.sh heads.log (if there are more than one ofc.)
+(optional) manually delete first couple of logs from heads.log -->  till it syncs
 
 (5) sudo python3 MergeBlocks.py  
 a) this sets the lowest timestamp of block reception (from both blocks.log and blocksAnnouncements.log)

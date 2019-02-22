@@ -3,12 +3,12 @@
 (2) copy there ../concatLogs.sh, and all scripts from this folder
 
 (3a) run:
-$ sudo python3 blocks-dropDuplicates.py blocks.log
-(Result) it will create one final unique-blocks.log.FINAL
+$ sudo bash dropDuplicates.sh blocks
+(Result) it will create one final unique-unique-blocks.log.FINAL
 
 (3b) run:
-$ sudo python3 blocksAnnouncements-dropDuplicates.py blocksAnnouncements.log
-(Result) it will create one final unique-blockAnnouncements.log.FINAL
+$ sudo bash dropDuplicates.sh blocksAnnouncements
+(Result) it will create one final unique-unique-blockAnnouncements.log.FINAL
 
 (4) concatenate heads.log.*  into one
 $ sudo bash concatLogs.sh heads.log (if there are more than one ofc.)
@@ -20,7 +20,7 @@ b) goes through heads.log and marks BlockType in blocks.log which blocks are on 
 produces blocksMergedCheckManuallyNow.log    that may contain BlockType==nan or "CheckManually"
 
 (6) 
-python 3 BlockTypes.py   -> to show if there is need to check the block manually 
+$ sudo python3 BlockTypes.py   -> to show if there is need to check the block manually 
 
 (7) manually set the blocks with  BlockType==nan or "CheckManually"  to Main/Uncle
 

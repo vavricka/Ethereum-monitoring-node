@@ -8,7 +8,7 @@ TXS_OUT="unique-unique-txs-with-gasused.log"
 
 # load txgasused only txhash and its gasuded
 txsgas = pd.read_csv(TXS_GAS_LOG,
-    names=['BlockHash','TxHash','GasUsed'], usecols=['TxHash','GasUsed'])
+    names=['LocalTimeStamp','BlockHash','TxHash','GasUsed'], usecols=['TxHash','GasUsed'])
 
 #sort by txhash
 txsgas = txsgas.sort_values(by=['TxHash'])

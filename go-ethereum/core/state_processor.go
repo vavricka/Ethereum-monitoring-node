@@ -20,6 +20,7 @@ import (
 	syslog "log/syslog"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -94,6 +95,7 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 
 			// GasUsed  "" -> failed
 			p.logTx.Info("TxGasUsed",
+				"LocalTimestamp", time.Now(),
 				"BlockHash", block.Hash(),
 				"TxHash", tx.Hash(),
 				"TxGasUsed", "")
@@ -101,6 +103,7 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 		}
 
 		p.logTx.Info("TxGasUsed",
+			"LocalTimestamp", time.Now(),
 			"BlockHash", block.Hash(),
 			"TxHash", tx.Hash(),
 			"TxGasUsed", tx.Gas())

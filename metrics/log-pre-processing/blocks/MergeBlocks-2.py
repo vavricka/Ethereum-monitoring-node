@@ -4,9 +4,6 @@
 import pandas as pd
 import numpy as np
 
-# input  log produced from MergeBlocks.py, checked by BlockTypes.py 
-# and manually checked and updated
-# and renamed to blocksMergedChecked.log
 MERGED_CHECKED_BLOCKS_LOG = "blocksMergedChecked.log" #new blocks, w/o duplicates
 
 #output of this script
@@ -16,8 +13,7 @@ blocks = pd.read_csv(MERGED_CHECKED_BLOCKS_LOG,
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles','BlockType'])
 
-
-# each Uncle ->   RecUncle/UnRecUncle
+# each Uncle ->  RecUncle/UnRecUncle
 # for each  Main check its ListOfUncles  ; find these uncles and set them as recognized uncles "Recognized"
 for row in blocks.itertuples():
     if row[14] == 'Main': # 14 # blockType

@@ -2,11 +2,23 @@
 
 import pandas as pd
 import numpy as np
+import sys
+import os
+from pathlib import Path
 
 
-BLOCKS_FINAL_LOG = "blocksMergedCheckManuallyNow.log"
+#check   -   need exactly one param
+if len(sys.argv) != 2:
+    sys.exit(sys.argv[0], ": expecting one parameter")
+
+BLOCKS_LOG = sys.argv[1]                      #input .log  (not .csv)
+
+#check - that log-file exists
+if not os.path.isfile(BLOCKS_LOG):
+    sys.exit(BLOCKS_LOG, ": does not exists!")
+
 #takes preprocessed blocksMerged
-blocks = pd.read_csv(BLOCKS_FINAL_LOG, 
+blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles','BlockType'])
 

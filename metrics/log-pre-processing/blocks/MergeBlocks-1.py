@@ -3,8 +3,7 @@
 import pandas as pd
 import numpy as np
 
-NEWBLOCKS_LOG = "unique-unique-blocks.log.FINAL" #new blocks, w/o duplicates
-ANNOUNCEMENTS_LOG = "unique-blocksAnnouncements.log.FINAL"
+NEWBLOCKS_LOG = "unique-unique-blocks.log.FINAL.TimestampsUpdated" #new blocks, w/o duplicates
 BLOCKHEADS_LOG = "heads.log" #unique by def; careful, in the beginning not sorted. DELETE unsorted beginning first
 
 #output of this script
@@ -14,22 +13,6 @@ blck1 = pd.read_csv(NEWBLOCKS_LOG,
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles'])
 
-blck2 = pd.read_csv(ANNOUNCEMENTS_LOG, 
-    names=['LocalTimeStamp','BlockHash'])
-
-# TODO make this working ...
-
-# (1) set LOWEST Timestamp from both blocks.log and blocksAnnouncements.log
-# for each row in NewBlockMsg    check if some row from NewBlockHashesMsg with equal hash has lowertimestamp
-# update newblockmsg  accordingly
-#for i, row in blck1.iterrows():
-#    tmp = blck2.loc[blck2['BlockHash'] == row['BlockHash']]['LocalTimestamp'].head()
-#    
-#    #it goes to this clausule only if blck2 contains a row with given BlockHash
-#    if not tmp.empty:
-#        # update NEWEST timestamps
-#        if pd.to_datetime(tmp.item(), utc=True) < pd.to_datetime(blck1.at[i,'LocalTimestamp'], utc=True):
-#            blck1.at[i,'LocalTimestamp'] = tmp.item()
 
 # add BlockType column
 blocks = blck1.assign(BlockType = np.nan)

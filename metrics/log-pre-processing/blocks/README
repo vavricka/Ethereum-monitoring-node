@@ -2,27 +2,33 @@
 
 (2) copy there ../concatLogs.sh, and all scripts from this folder
 
-(3a) run:
-$ sudo bash dropDuplicates.sh blocks
+(3a)$ sudo bash dropDuplicates.sh blocks
 (Result) it will create one final unique-unique-blocks.log.FINAL
 
-(3b) run:
-$ sudo bash dropDuplicates.sh blocksAnnouncements
+(3b) $ sudo bash dropDuplicates.sh blocksAnnouncements
 (Result) it will create one final unique-unique-blockAnnouncements.log.FINAL
 
-(4) concatenate heads.log.*  into one
-$ sudo bash concatLogs.sh heads.log (if there are more than one ofc.)
-(optional) manually delete first couple of logs from heads.log -->  till it syncs
+(4) $ sudo bash concatLogs.sh heads.log #(if there are more than one ofc.)
 
-(5) sudo python3 MergeBlocks.py  
-a) this sets the lowest timestamp of block reception (from both blocks.log and blocksAnnouncements.log)
-b) goes through heads.log and marks BlockType in blocks.log which blocks are on MAIN blockchain and which are Uncles
+(4b) manually delete first couple of logs from heads.log -->  till it becomes consecutive
+
+(5) manually check unique-unique-blocks.log.FINAL  manually del leading lines so it matches the first block's number from heads.log
+
+(6) check with scripts heads.log must be consecutive (otherwise ... i need external  source of blocks..)
+    via metrics/log-pre-processing/blocks/aux dir
+
+(7) sudo python3 MergeBlocks-0.py  
+this sets the lowest timestamp of block reception (from both blocks.log and blocksAnnouncements.log)
+output: unique-unique-blocks.log.FINAL.TimestampsUpdated
+
+(8) sudo python3 MergeBlocks-1.py    # TODO   Done but properly check if it works properly
+  goes through heads.log and marks BlockType in blocks.log which blocks are on MAIN blockchain and which are Uncles
 produces blocksMergedCheckManuallyNow.log    that may contain BlockType==nan or "CheckManually"
+(8b) $ sudo python3 BlockTypes.py blocksMergedCheckManuallyNow.log   -> to show if there is need to check the block manually 
+(opt)(8c) manually set the blocks with  BlockType==nan or "CheckManually" to Main/Uncle
+(8d) $ mv blocksMergedCheckManuallyNow.log blocksMergedChecked.log
 
-(6) 
-$ sudo python3 BlockTypes.py   -> to show if there is need to check the block manually 
-
-(7) manually set the blocks with  BlockType==nan or "CheckManually"  to Main/Uncle
-
-(8) sudo python3 MergeBlocks-2.py 
+(9) $sudo python3 MergeBlocks-2.py 
 that sets Uncles into  Recognized or Unrecognized..
+(9b) $sudo python3 BlockTypes.py blocksFinal.log  -> to see how many uncles/recognized..
+

@@ -6,8 +6,6 @@ import sys
 import os
 from pathlib import Path
 
-
-#check   -   need exactly one param
 if len(sys.argv) != 2:
     sys.exit(sys.argv[0], ": expecting one parameter")
 
@@ -36,6 +34,10 @@ print("Recognized: ", len(blocks[blocks.BlockType == "Recognized"]))
 #print num of rec uncles
 print("CheckManually: ", len(blocks[blocks.BlockType == "CheckManually"]))
 
+#nan
+# doesn't work for some reason
+#print("NaN: ", len(blocks[blocks.BlockType == np.nan]))
+
 someCheckMan = False
 someNan = False
 
@@ -46,12 +48,15 @@ for i, row in blocks.iterrows():
         if not someCheckMan:
             someCheckMan = True
 
-#for i, row in blocks.iterrows():
-#    if row['BlockType'] is np.nan: #CheckManually
-#        print("BlockType not set in block num: ", int(row['Number']))
-#        if not someNan:
-#            someNan = True
 
+for i, row in blocks.iterrows():
+    if (row['BlockType'] != "CheckManually" and
+        row['BlockType'] != "Main" and
+        row['BlockType'] != "Uncle" and
+        row['BlockType'] != "Recognized"):
+        print(int(row['Number']), row['BlockHash'], row['BlockType'] )
+        if not someNan:
+            someNan = True
 
 
 

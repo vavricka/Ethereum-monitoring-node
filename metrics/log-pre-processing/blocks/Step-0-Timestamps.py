@@ -2,9 +2,9 @@
 import pandas as pd
 import numpy as np
 
-NEWBLOCKS_LOG = "unique-unique-blocks.log.FINAL" #new blocks, w/o duplicates
+NEWBLOCKS_LOG = "blocks-stage-0.log" #new blocks, w/o duplicates
 ANNOUNCEMENTS_LOG = "unique-unique-blocksAnnouncements.log.FINAL"
-BLOCKS_FINAL_LOG = NEWBLOCKS_LOG + ".TimestampsUpdated"
+BLOCKS_FINAL_LOG = "blocks-stage-1.log"
 
 blocks = pd.read_csv(NEWBLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',

@@ -35,6 +35,9 @@ while ID != ID_MIN:
 #last one
 blocks.loc[ID, 'BlockType'] = "Main"
 
+#set all nan to uncles
+blocks.loc[blocks['BlockType'] != "Main", 'BlockType'] = "Uncle"
+
 #sort it back by timestamp...
 blocks = blocks.sort_values(by=['LocalTimeStamp'])
 

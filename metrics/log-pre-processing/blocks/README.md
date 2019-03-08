@@ -41,11 +41,9 @@
   goes through blocks-stage-2.log and sets the last block's blocktype as 'Main'
   then it goes to that block's parentHash and sets that block as 'Main',
   recursively it does the same till the first block.
+  All remaining blocks will be set to 'Uncle'.
   Input blocks-stage-2.log
-  Output blocks-stage-3.log (with set BlockType='Main')
-
-# TODO +  rovnou kde neni main at je UNCLE...
-
+  Output blocks-stage-3.log (with set BlockType='Main','Uncle')
   # if you pass e.g blocks-stage-2.log.ANGAINOR don't forget to rename
   # blocks-stage-3.log to blocks-stage-3.log.ANGAINOR
 

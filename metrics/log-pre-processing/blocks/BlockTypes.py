@@ -19,41 +19,35 @@ if not os.path.isfile(BLOCKS_LOG):
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'])
+    'CapturedLocally','BlockType'])#, dtype={'CapturedLocally': np.bool})
 
-print("Total: ", len(blocks))
+print()
+print("Total Blocks: ", len(blocks), "(Local:",
+    len(blocks[blocks.CapturedLocally == True]),
+    "Imported:", str(len(blocks[blocks.CapturedLocally == False])) + ")")
 
+print("---")
+
+num_main = len(blocks[blocks.BlockType == "Main"])
+num_main_local = len(blocks[(blocks.BlockType == "Main") & (blocks.CapturedLocally == True)] )
+num_main_impor = len(blocks[(blocks.BlockType == "Main") & (blocks.CapturedLocally == False)] )
 #prints number of Main   (check with num of Main in heads)
-print("Main: ", len(blocks[blocks.BlockType == "Main"]))
+print("Main:", num_main, "(Local:", num_main_local , "Imported:", str(num_main_impor) + ")")
 
+num_uncle = len(blocks[blocks.BlockType == "Uncle"])
+num_uncle_local = len(blocks[(blocks.BlockType == "Uncle") & (blocks.CapturedLocally == True)] )
+num_uncle_impor = len(blocks[(blocks.BlockType == "Uncle") & (blocks.CapturedLocally == False)] )
 #print num of uncles
-print("Uncle: ", len(blocks[blocks.BlockType == "Uncle"]))
+print("Uncle:", num_uncle, "(Local:", num_uncle_local , "Imported:", str(num_uncle_impor) + ")")
 
-#print num of rec uncles
-print("Recognized: ", len(blocks[blocks.BlockType == "Recognized"]))
+num_rec_uncle = len(blocks[blocks.BlockType == "Recognized"])
+num_rec_uncle_local = len(blocks[(blocks.BlockType == "Recognized") & (blocks.CapturedLocally == True)] )
+num_rec_uncle_impor = len(blocks[(blocks.BlockType == "Recognized") & (blocks.CapturedLocally == False)] )
+#print num of uncles
+print("Recognized:", num_rec_uncle, "(Local:", num_rec_uncle_local , "Imported:", str(num_rec_uncle_impor) + ")")
 
-
-#nan
-# doesn't work for some reason
-#print("NaN: ", len(blocks[blocks.BlockType == np.nan]))
-
-
-someNan = False
-
-
-
-for i, row in blocks.iterrows():
-    if (row['BlockType'] != "Main" and
-        row['BlockType'] != "Uncle" and
-        row['BlockType'] != "Recognized"):
-
-        #print(int(row['Number']), row['BlockHash'], row['BlockType'] )
-        if not someNan:
-            someNan = True
-
-
-
-if not someNan:
-    print("there are NO blocks with blockType==NaN so nothing to do here")
-else:
-    print("there ARE some blocks with blockType==NaN so fix it")
+#uncomment to show imported blocks
+#for i, row in blocks.iterrows():
+#    if row['CapturedLocally'] == False:
+#        print(row['LocalTimeStamp'], row['Number'], row['BlockHash'], row['BlockType'])
+#        

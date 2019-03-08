@@ -49,6 +49,3 @@ print("blocks:", len(blocks.index))
 print("min block-num:", blocks['Number'].min())
 print("max block-num:", blocks['Number'].max())
 print("num holes:", num_holes)
-
-#tmp !!!
-#blocks.to_csv("TMP.csv", index=False, header=True)

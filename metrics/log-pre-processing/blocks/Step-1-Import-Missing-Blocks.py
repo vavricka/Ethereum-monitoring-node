@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 import pandas as pd
 import numpy as np
+import sys
+import os
+from pathlib import Path
+
 
 # Merges bloks from 
 # another node to fill the missing blocks in the curent machi.
@@ -8,12 +12,21 @@ import numpy as np
 #  BlockType will be empty atm-will be set in next step, 
 #  CapturedLocally - True - if the block was there; False -> if it was added in this
 #  script and in this case, the LocalTimestamp does not count...
-#  Input: blocks-stage-1.log from various machines
+#  Input: blocks-stage-1.log.LOC blocks-stage-1.log.REM
 #  Output blocks-stage-2.log  with two more params:  BlockType,CapturedLocally
 
+if len(sys.argv) != 3:
+    sys.exit(sys.argv[0], ": expecting 2 parameters.")
+
 #INPUT FILES
-LOCAL_BLOCKS = "blocks-stage-1.log" #new blocks, w/o duplicates
-REMOTE_BLOCKS = "blocks-stage-1.log.MACHINE-2" #new blocks, w/o duplicates
+LOCAL_BLOCKS = sys.argv[1] #"blocks-stage-1.log.LOC"
+REMOTE_BLOCKS = sys.argv[2]
+
+if not os.path.isfile(LOCAL_BLOCKS):
+    sys.exit(LOCAL_BLOCKS, ": does not exists!")
+
+if not os.path.isfile(REMOTE_BLOCKS):
+    sys.exit(REMOTE_BLOCKS, ": does not exists!")
 
 #output of this script
 BLOCKS_FINAL_LOG = "blocks-stage-2.log"
@@ -28,6 +41,9 @@ remote_blocks = pd.read_csv(REMOTE_BLOCKS,
 
 # add  two columns to loc & all captLoc = True
 local_blocks = local_blocks.assign(CapturedLocally = 'True', BlockType = np.nan)
+
+# add  two columns to loc & all captLoc = False
+remote_blocks = remote_blocks.assign(CapturedLocally = 'False', BlockType = np.nan)
 
 #loop through all remote blocks
 for _, row in remote_blocks.iterrows():

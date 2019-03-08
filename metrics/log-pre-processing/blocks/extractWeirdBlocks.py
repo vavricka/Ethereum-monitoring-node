@@ -29,7 +29,6 @@ blocks = pd.read_csv(BLOCKS_LOG,
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles'])
 
-
 #apply conditions
 blocks_out = blocks[(blocks.Number >= MIN_NUMBER) & (blocks.Number <= MAX_NUMBER)]
 weird_blocks_out = blocks[(blocks.Number < MIN_NUMBER) | (blocks.Number > MAX_NUMBER)]

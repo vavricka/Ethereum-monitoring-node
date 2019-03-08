@@ -44,14 +44,17 @@
   All remaining blocks will be set to 'Uncle'.
   Input blocks-stage-2.log
   Output blocks-stage-3.log (with set BlockType='Main','Uncle')
-  # if you pass e.g blocks-stage-2.log.ANGAINOR don't forget to rename
-  # blocks-stage-3.log to blocks-stage-3.log.ANGAINOR
+  (! if you pass e.g blocks-stage-2.log.ANGAINOR don't forget to rename)
+  (! blocks-stage-3.log to blocks-stage-3.log.ANGAINOR)
 
 #TODO
-#(9 TODO) Step-3 ...py script that sets Uncles
+#(9 TODO) Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
+  Loops through Uncles and sets as Recongnized those which are..
+  Output: blocks-stage-4.log with all blocktypes set : Main/Uncle/Recognized (=recognized uncle)
 
-$sudo python3 Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
-that sets Uncles and Recognized uncles....
-out blocks-stage-4.log..  with all blocktypes set : main/uncle/recognized(uncle)
+(10) $sudo python3 BlockTypes.py blocks-stage-4.log
+ shows some statistics like this:
+  Main: 15098 (Local: 15030 Imported: 68)
+  Uncle: 1148 (Local: 1135 Imported: 13)
+  Recognized: 0 (Local: 0 Imported: 0)
 
-#TODO(10) $sudo python3 BlockTypes.py blocksFinal.log  -> to see how many uncles/recognized..main

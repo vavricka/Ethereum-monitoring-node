@@ -1,17 +1,26 @@
 #!/usr/bin/python3
-# the purpose of this script is to check all Uncles and set them to either recognized or 
+# the purpose of this script is to set BlockType to Uncle or Recognized Uncle..
 # not recognized
 import pandas as pd
 import numpy as np
+import sys
+import os
+from pathlib import Path
 
-MERGED_CHECKED_BLOCKS_LOG = "blocksMergedChecked.log" #new blocks, w/o duplicates
+if len(sys.argv) != 2:
+    sys.exit(sys.argv[0], ": expecting 1 parameter.")
+
+BLOCKS_LOG = sys.argv[1] #"blocks-stage-3.log"
+if not os.path.isfile(BLOCKS_LOG):
+    sys.exit(BLOCKS_LOG, ": does not exists!")
 
 #output of this script
-BLOCKS_FINAL_LOG = "blocksFinal.log"
+BLOCKS_FINAL_LOG = "blocks-stage-4.log"
 
-blocks = pd.read_csv(MERGED_CHECKED_BLOCKS_LOG, 
+blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
-    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles','BlockType'])
+    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
+    'CapturedLocally','BlockType'])
 
 # each Uncle ->  RecUncle/UnRecUncle
 # for each  Main check its ListOfUncles  ; find these uncles and set them as recognized uncles "Recognized"

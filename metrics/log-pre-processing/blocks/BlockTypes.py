@@ -18,7 +18,8 @@ if not os.path.isfile(BLOCKS_LOG):
 #takes preprocessed blocksMerged
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
-    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles','BlockType'])
+    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
+    'CapturedLocally','BlockType'])
 
 print("Total: ", len(blocks))
 
@@ -31,39 +32,25 @@ print("Uncle: ", len(blocks[blocks.BlockType == "Uncle"]))
 #print num of rec uncles
 print("Recognized: ", len(blocks[blocks.BlockType == "Recognized"]))
 
-#print num of rec uncles
-print("CheckManually: ", len(blocks[blocks.BlockType == "CheckManually"]))
 
 #nan
 # doesn't work for some reason
 #print("NaN: ", len(blocks[blocks.BlockType == np.nan]))
 
-someCheckMan = False
+
 someNan = False
 
-# print all CheckManually
-for i, row in blocks.iterrows():
-    if row['BlockType'] == "CheckManually":
-        print("CheckManually block with num: ", int(row['Number']))
-        if not someCheckMan:
-            someCheckMan = True
 
 
 for i, row in blocks.iterrows():
-    if (row['BlockType'] != "CheckManually" and
-        row['BlockType'] != "Main" and
+    if (row['BlockType'] != "Main" and
         row['BlockType'] != "Uncle" and
         row['BlockType'] != "Recognized"):
-        print(int(row['Number']), row['BlockHash'], row['BlockType'] )
+
+        #print(int(row['Number']), row['BlockHash'], row['BlockType'] )
         if not someNan:
             someNan = True
 
-
-
-if not someCheckMan:
-    print("there are NO blocks with blockType==CheckManually so nothing to do here")
-else:
-    print("there ARE some blocks with blockType==CheckManually so fix it")
 
 
 if not someNan:

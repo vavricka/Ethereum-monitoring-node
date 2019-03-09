@@ -53,13 +53,16 @@ print("Verifying Uncle+Main", num_main + num_uncle, "=?", len(blocks), "blocks")
 
 #B   forks and their lengths..
 uncles = blocks[blocks.BlockType == "Uncle"]
+
+uncles = uncles.assign(ForkLength = 0)  #0 means  NOT SET because the smallest fork-size is 1
+
 current_fork_length = 1
 
 #for each UNCLE
-for _, row in uncles.iterrows():
+for i, row in uncles.iterrows():
 
     current_fork_length = 1
-    print("uncle num:",row.Number, "hash:", row.BlockHash)
+    #print("uncle num:",row.Number, "hash:", row.BlockHash)
 
     parentHash = row.ParentHash
     
@@ -74,13 +77,22 @@ for _, row in uncles.iterrows():
             #Main?
             if curr_block.BlockType.values[0] == "Main":
                 #reaching main... here the forks ends
-                print("FORK LENGTH:", current_fork_length)
+                #print("FORK LENGTH:", current_fork_length) #, "index:", i)
+
+                uncles.loc[i, 'ForkLength'] = current_fork_length
+                #print(uncles.loc[i])
+
                 break
             else:
                 current_fork_length = current_fork_length + 1
                 parentHash = curr_block.ParentHash.values[0]
 
 
+
+print("fork not set:", len(uncles[uncles.ForkLength == 0]))
+print("fork len 1:", len(uncles[uncles.ForkLength == 1]))
+print("fork len 2:", len(uncles[uncles.ForkLength == 2]))
+print("fork len 3:", len(uncles[uncles.ForkLength == 3]))
 
 
 

@@ -21,7 +21,6 @@ blocks = pd.read_csv(BLOCKS_LOG,
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
     'CapturedLocally','BlockType'])#, dtype={'CapturedLocally': np.bool})
 
-print()
 print("Total Blocks: ", len(blocks), "(Local:",
     len(blocks[blocks.CapturedLocally == True]),
     "Imported:", str(len(blocks[blocks.CapturedLocally == False])) + ")")

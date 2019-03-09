@@ -47,12 +47,13 @@
   (! if you pass e.g blocks-stage-2.log.ANGAINOR don't forget to rename)
   (! blocks-stage-3.log to blocks-stage-3.log.ANGAINOR)
 
-#TODO
+# !!! For now ommited -> thus blocks-stage-3.log is the final stage
+# !!! Block Type is only Main/Uncle      
 #(9 TODO) Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
-  Loops through Uncles and sets as Recongnized those which are..
-  Output: blocks-stage-4.log with all blocktypes set : Main/Uncle/Recognized (=recognized uncle)
+#  sets Uncles that are included in the ListOfUncles property of some block from Main chain as Recognized.
+#  Output: blocks-stage-4.log with all blocktypes set : Main/Uncle/Recognized (=recognized uncle)
 
-(10) $sudo python3 BlockTypes.py blocks-stage-4.log
+(10) $sudo python3 BlockTypes.py blocks-stage-3.log
  shows some statistics like this:
   Main: 15098 (Local: 15030 Imported: 68)
   Uncle: 1148 (Local: 1135 Imported: 13)

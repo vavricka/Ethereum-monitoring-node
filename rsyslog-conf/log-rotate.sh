@@ -10,7 +10,7 @@ fi
 
 while true
 do
-    if [ ! -f "$LOG_NAME.$NUM" ]
+    if [ ! -f "$LOG_NAME.$NUM.lzma" ]
         then
         break
     fi
@@ -18,3 +18,5 @@ do
 done
 
 mv -f $LOG_NAME $LOG_NAME.$((NUM))
+
+lzma -z $LOG_NAME.$((NUM))

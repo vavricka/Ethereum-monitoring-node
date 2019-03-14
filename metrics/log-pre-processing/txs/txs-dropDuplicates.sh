@@ -32,10 +32,10 @@ do
         break
     fi
 
-     python3 txs-dropDuplicates.py $LOG_NAME.$NUM
+    python3 txs-dropDuplicates.py $LOG_NAME.$NUM
     NUM=$((NUM+1))
 done
- python3 txs-dropDuplicates.py $LOG_NAME
+python3 txs-dropDuplicates.py $LOG_NAME
 
 # step 2 - concatenate the unique-txs.log.x ... into one
  touch $UNIQUE_LOG.FINAL
@@ -53,4 +53,4 @@ done
 cat $UNIQUE_LOG >> $UNIQUE_LOG.FINAL
 
 # step 3 - call dropDuplicates on the final unique-txs.log...
- python3 txs-dropDuplicates.py $UNIQUE_LOG.FINAL
+python3 txs-dropDuplicates.py $UNIQUE_LOG.FINAL

@@ -7,7 +7,9 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
-#TXS_LOG= "unique-unique-txs.log.FINAL"
+#TODO redo this ... e.g. gasUsed == -1 no more used,  validity error may be in some cases. etc.
+
+#TODO redo
 TXS_LOG="unique-unique-txs-with-gasused.log"
 
 #txs = pd.read_csv(TX_CSV, usecols=['MsgType', 'GasLimit'])

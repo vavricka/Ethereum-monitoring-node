@@ -5,6 +5,9 @@ import sys
 import os
 from pathlib import Path
 
+if len(sys.argv) != 3:
+    sys.exit(sys.argv[0], ": expecting 2 parameters.")
+
 TXS_LOG = sys.argv[1] #txs-stage-1.log
 GAS_LOG = sys.argv[2] #txgasused.log* logs concatenated
 

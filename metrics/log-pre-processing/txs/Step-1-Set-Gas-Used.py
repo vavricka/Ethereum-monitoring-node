@@ -1,77 +1,82 @@
 #!/usr/bin/python3
 import pandas as pd
 import numpy as np
+import sys
+import os
+from pathlib import Path
 
+TXS_LOG = sys.argv[1] #txs-stage-1.log
+GAS_LOG = sys.argv[2] #txgasused.log* logs concatenated
 
+if not os.path.isfile(TXS_LOG):
+    sys.exit(TXS_LOG, ": does not exists!")
 
-# TODODOD>.......
+if not os.path.isfile(GAS_LOG):
+    sys.exit(GAS_LOG, ": does not exists!")
 
+#output of this script
+TXS_OUT="txs-stage-2.log" #txs with gasUsed set
 
-TXS_GAS_LOG = "txgasused.log.FINAL" #txgasused.log* logs concatenated
-TXS_LOG = "unique-unique-txs.log.FINAL"
+dtypes = {
+        'LocalTimeStamp'    : 'object',
+        'Hash'              : 'object',
+        'GasLimit'          : 'object',
+        'GasPrice'          : 'object',
+        'Value'             : 'object',
+        'Nonce'             : 'object',
+        'MsgType'           : 'object',
+        'Cost'              : 'object',
+        'Size'              : 'object',
+        'To'                : 'object',
+        'From'              : 'object',
+        'ValidityErr'       : 'object',
+        'CapturedLocally'   : 'object',
+        'GasUsed'           : 'object',
+        }
 
+dtypes_gas = {
+        'LocalTimeStamp'    : 'object',
+        'BlockHash'         : 'object',
+        'TxHash'            : 'object',
+        'GasUsed'           : 'object',
+        }
 
+#load txs
+txs = pd.read_csv(TXS_LOG,
+    names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
+            'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed'],
+            index_col=False, dtype=dtypes)
 
-
-TXS_OUT="unique-unique-txs-with-gasused.log"
-
-# load txgasused only txhash and its gasuded
-txsgas = pd.read_csv(TXS_GAS_LOG,
-    names=['LocalTimeStamp','BlockHash','TxHash','GasUsed'], usecols=['LocalTimeStamp','TxHash','GasUsed'])
+# load txgasused
+txsgas = pd.read_csv(GAS_LOG,
+    names=['LocalTimeStamp','BlockHash','TxHash','GasUsed'],
+    usecols=['LocalTimeStamp','TxHash','GasUsed'],
+    dtype=dtypes_gas)
 
 #sort by txhash
 txsgas = txsgas.sort_values(by=['TxHash'])
+txsgas.reset_index(inplace=True, drop=True)
 
-#load uniquetxs
-txs = pd.read_csv(TXS_LOG,
-    names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
-   'Cost','Size','To','From','ValidityErr'], index_col=False)
-
-#add gasused column
-txs["GasUsed"] = ""
-
-#tmp   2019-02-28T14:29:38.134+0000   time of first tx in uniq.txs.ArithmeticError
-timeFirstTx  = pd.to_datetime("2019-02-28T14:29:38.134+0000")
-
-gasOlder = 0
-invalidAndHasGas=0
-notInGastxs=0
-
-
-
-#loop all uniquetxs
-for i, row in txs.iterrows():
-    # if not inval  (row['ValidityErr'] == nil).
-    #  chceck if txhash   is in   txgasused.log   SET   else   NA
-    
-    line = txsgas['TxHash'].searchsorted(row['Hash']) 
-    try:
-        if row['Hash'] == txsgas.iloc[line].TxHash:
-            txs.at[i, 'GasUsed'] = txsgas.iloc[line].GasUsed
-
-            #tmp GasOlderThanFirstTxInTXS
-            if pd.to_datetime(txsgas.iloc[line].LocalTimeStamp) < timeFirstTx:
-                print("GOLDER", txsgas.iloc[line].LocalTimeStamp, txsgas.iloc[line].TxHash)
-                gasOlder = gasOlder + 1
-            #also new ;;  invalid but IT IS in txgas... this would be missing in old setup..
-            if row['ValidityErr'] == 'nil':
-                print("Invalid", txsgas.iloc[line].LocalTimeStamp, txsgas.iloc[line].TxHash)
-                invalidAndHasGas = invalidAndHasGas + 1
-
-        else:  
-            notInGastxs = notInGastxs + 1 
-            # set txs  gasused   as  NA
-            #because  this we don't have gasused in our db for this tx..
-    except IndexError as e:
-        print(row['LocalTimeStamp'], row['Hash'], e)
-
-    
+#loop all txs in TXS_LOG
+for i in txs.index:
+        txHash = txs.at[i,'Hash']
         
+        # search sorted if txs is in GAS_LOG
+        line = txsgas['TxHash'].searchsorted(txHash)
 
-
-
-print("gasOlder:", gasOlder,"invalidAndHasGas:", invalidAndHasGas,"notInGastxs:",notInGastxs)
-
+        try:
+            #is it there? -> set GasUsed to TXS_LOG !
+            if txHash == txsgas.at[line,'TxHash']:
+                #print(line, txHash, "in both")
+                txs.at[i,'GasUsed'] = txsgas.at[line,'GasUsed']
+            #it is not there -> nothing to do here
+            else:  
+                #print(line, txHash, "not in txgas->", txsgas.at[line,'TxHash'])
+                pass
+        #it is not there -> nothing to do here
+        except IndexError as e:
+            #print(line, txHash, "not in txgas + err", e)
+            pass
 
 # export to new csv..
 txs.to_csv(TXS_OUT, index=False, header=False)

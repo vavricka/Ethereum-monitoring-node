@@ -45,11 +45,16 @@ do
         #end tmp print
 
         #do backup_files
-        echo "creating backup $LOG_NAME.$NUM~Backup-Original"
-        cp "$LOG_NAME.$NUM" "$LOG_NAME.$NUM~Backup-Original"
-        echo "creating backup $NEXT_LOG~Backup-Original"
-        cp "$NEXT_LOG" "$NEXT_LOG~Backup-Original"
-
+        if [ ! -f "$LOG_NAME.$NUM~Backup-Original" ] ; then
+            echo "creating backup $LOG_NAME.$NUM~Backup-Original"
+            cp "$LOG_NAME.$NUM" "$LOG_NAME.$NUM~Backup-Original"
+        fi
+        
+        if [ ! -f "$NEXT_LOG~Backup-Original" ] ; then
+            echo "creating backup $NEXT_LOG~Backup-Original"
+            cp "$NEXT_LOG" "$NEXT_LOG~Backup-Original"
+        fi
+        
         #### delete the endline byte from the end of log
         #truncate -s -1 $LOG_NAME.$((NUM))
         #### append first line from succeeding log to the end of curr.

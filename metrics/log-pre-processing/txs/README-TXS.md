@@ -18,14 +18,16 @@
 
 (7) copy gas-used.log.FINAL.REMOTE from another machine
 
-(8) python3 Step-0-B-Import-Missing-Gas-Used.py txgasused.log.FINAL.local \
-     txgasused.log.FINAL.REMOTE
-(Result) txgasused-merged.log
+(8) python3 Step-1-Set-Gas-Used.py txs-stage-1.log txgasused.log
+(Results) txs-stage-2.log (with GasUsed set)
 
-(9) python3 Step-1-Set-Gas-Used.py txs-stage-1.log txgasused-merged.log
-(Results) txs-stage-2.log (with GasUsed set at those txs which were in
-          txgasused-merged.log)
+(9) python3 Step-2-Set-Gas-Used.py txs-stage-2.log \
+     txgasused.log.REMOTE
+(Result) txs-stage-3.log   (possibly) with more gasUsed set
+     it can also yell err when it reaches a txs with different gasUsed..
+     - you shall diff txs-stage-3.log and txs-stage-2.log is some gasUsed were added..
 
+(TODO?) maybe
 
-(...) txs-stage.2.log is the final log-file with uniqe txs with all values set.
+(...) txs-stage.3.log is the final log-file with uniqe txs with all values set.
      Next step is to run individiual metrics.

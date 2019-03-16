@@ -5,8 +5,6 @@ import sys
 import os
 import gc
 from pathlib import Path
-import datetime
-
 
 # Merges txs from 
 # another node to fill the missing txs in the curent machine.

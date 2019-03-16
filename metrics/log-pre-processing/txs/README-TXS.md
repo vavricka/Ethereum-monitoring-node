@@ -12,16 +12,19 @@
 
 (5) copy (rsync) unique-unique-txs.log.FINAL from another machine
 
-#(opt)TODO  copy gas-used.log.FINAL  from another machine
-
 (6) python3 Step-0-Import-Missing-Txs.py unique-unique-txs.log.FINAL.LOCAL \
      unique-unique-txs.log.FINAL.REMOTE
 (Result) txs-stage-1.log   (with two new params - GasUsed(notSet),CapturedLocally(set))
 
-#(opt)TODO  missingGasUsed also ....
+(7) copy gas-used.log.FINAL.REMOTE from another machine
 
-(7) python3 Step-1-Set-Gas-Used.py txs-stage-1.log txgasused.log
-(Results) txs-stage-2.log (with GasUsed set at those txs which were in txgasused.log)
+(8) python3 Step-0-B-Import-Missing-Gas-Used.py txgasused.log.FINAL.local \
+     txgasused.log.FINAL.REMOTE
+(Result) txgasused-merged.log
+
+(9) python3 Step-1-Set-Gas-Used.py txs-stage-1.log txgasused-merged.log
+(Results) txs-stage-2.log (with GasUsed set at those txs which were in
+          txgasused-merged.log)
 
 
 (...) txs-stage.2.log is the final log-file with uniqe txs with all values set.

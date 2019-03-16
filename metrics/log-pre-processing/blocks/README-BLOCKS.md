@@ -9,21 +9,21 @@
 (4) $ bash dropDuplicates.sh blocksAnnouncements
 (Result) it will create one final unique-unique-blockAnnouncements.log.FINAL
 
-(5) python3 showHoles-Blocks.py unique-unique-blockAnnouncements.log.FINAL
+(5) python3 showHoles-Blocks.py unique-unique-blocks.log.FINAL
    prints holes in logs... as well as non-sense and eth classic blocs
    manually locate MIN and MAX valid blocknumbers you want to preserve
-(5b) python3 extractWeirdBlocks unique-unique-blockAnnouncements.log.FINAL MIN MAX
-   where MIN and MAX are respective blcoks (inlcusive) you want to preserve
+(5b) python3 extractWeirdBlocks unique-unique-blocks.log.FINAL <MIN> <MAX>
+   where MIN and MAX are respective blocks (inlcusive) you want to preserve
    it will generate $1.withoutWeirdBlocks and $1.weirdBlocks  files
    in case move possible broken blocks from the first to the second file
 (5c) python3 showHoles-Blocks.py $1.withoutWeirdBlocks
    final check
-(5d) manually rename  unique-unique-blockAnnouncements.log.FINAL.withoutWeirdBlocks
-     to blocks-stage-0.log
+(5d) manually:
+     $mv unique-unique-blocks.log.FINAL.withoutWeirdBlocks blocks-stage-0.log
 
 (6) $python3 Step-0-Timestamps.py
  this sets the lowest timestamp of block reception (from both 
- files blocks-stage-0.log and blocksAnnouncements.log)
+ files blocks-stage-0.log and unique-unique-blockAnnouncements.log.FINAL)
  Output: blocks-stage-1.log
 
 (7) $python3 Step-1-Import-Missing-Blocks.py blocks-stage-1.log.LOC blocks-stage-1.log.REM
@@ -45,8 +45,6 @@
   All remaining blocks will be set to 'Uncle'.
   Input blocks-stage-2.log
   Output blocks-stage-3.log (with set BlockType='Main','Uncle')
-  (! if you pass e.g blocks-stage-2.log.ANGAINOR don't forget to rename)
-  (! blocks-stage-3.log to blocks-stage-3.log.ANGAINOR)
 
 # !!! For now ommited -> thus blocks-stage-3.log is the final stage
 # !!! Block Type is only Main/Uncle      

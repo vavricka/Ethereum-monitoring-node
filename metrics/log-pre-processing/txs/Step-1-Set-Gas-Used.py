@@ -9,7 +9,7 @@ if len(sys.argv) != 3:
     sys.exit(sys.argv[0], ": expecting 2 parameters.")
 
 TXS_LOG = sys.argv[1] #txs-stage-1.log
-GAS_LOG = sys.argv[2] #txgasused.log* logs concatenated
+GAS_LOG = sys.argv[2] #txgasused.log.FINAL
 
 if not os.path.isfile(TXS_LOG):
     sys.exit(TXS_LOG, ": does not exists!")
@@ -35,6 +35,12 @@ dtypes = {
         'ValidityErr'       : 'object',
         'CapturedLocally'   : 'object',
         'GasUsed'           : 'object',
+        'InMainBlock'       : 'object',
+        'InBlocks'          : 'object',
+        'InOrder'           : 'object',
+        'CommitTime'        : 'object',
+        'NeverCommiting'    : 'object',
+        'RemoteTimeStamp'   : 'object',
         }
 
 dtypes_gas = {
@@ -47,7 +53,9 @@ dtypes_gas = {
 #load txs
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
-            'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed'],
+            'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
+            'InMainBlock','InBlocks','InOrder','CommitTime','NeverCommiting',
+            'RemoteTimeStamp'],
             index_col=False, dtype=dtypes)
 
 # load txgasused

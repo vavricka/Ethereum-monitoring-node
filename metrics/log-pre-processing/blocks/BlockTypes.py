@@ -15,11 +15,29 @@ BLOCKS_LOG = sys.argv[1]  # blocks-stage-4.log
 if not os.path.isfile(BLOCKS_LOG):
     sys.exit(BLOCKS_LOG, ": does not exists!")
 
-#takes preprocessed blocksMerged
+dtypes_blocks = {
+        'LocalTimeStamp'    : 'object',
+        'BlockHash'     : 'object',
+        'Number'        : 'object',
+        'GasLimit'      : 'object',
+        'GasUsed'       : 'object',
+        'Difficulty'    : 'object',
+        'Time'          : 'object',
+        'Coinbase'      : 'object',
+        'ParentHash'    : 'object',
+        'UncleHash'     : 'object',
+        'BlockSize'     : 'object',
+        'ListOfTxs'     : 'object',
+        'ListOfUncles'  : 'object',
+        'CapturedLocally'   : 'bool',
+        'BlockType'         : 'object',
+        }
+
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'])
+    'CapturedLocally','BlockType'],
+    dtype=dtypes_blocks)
 
 print("Total Blocks: ", len(blocks), "(Local:",
     len(blocks[blocks.CapturedLocally == True]),

@@ -46,15 +46,18 @@
   Input blocks-stage-2.log
   Output blocks-stage-3.log (with set BlockType='Main','Uncle')
 
-# !!! For now ommited -> thus blocks-stage-3.log is the final stage
-# !!! Block Type is only Main/Uncle      
-#(9 TODO) Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
-#  sets Uncles that are included in the ListOfUncles property of some block from Main chain as Recognized.
-#  Output: blocks-stage-4.log with all blocktypes set : Main/Uncle/Recognized (=recognized uncle)
+(9) Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
+   sets Uncles that are included in the ListOfUncles property of some block from Main chain as Recognized.
+   Output: blocks-stage-4.log with all blocktypes set : Main/Uncle/Recognized (=recognized uncle)
 
-(10) $python3 BlockTypes.py blocks-stage-3.log
- shows some statistics like this:
-  Main: 15098 (Local: 15030 Imported: 68)
-  Uncle: 1148 (Local: 1135 Imported: 13)
-  Recognized: 0 (Local: 0 Imported: 0)
+(10) $python3 BlockTypes.py blocks-stage-4.log
+   shows some statistics like this:
+      Total Blocks:  24574 (Local: 24433 Imported: 141)
+      ---
+      Main Blocks: 22957 (Local: 22828 Imported: 129)
+      Not-recognized Uncles: 25 (Local: 25 Imported: 0)
+      Recognized Uncles: 1592 (Local: 1580 Imported: 12)
 
+#TODO - calculate metrics here in preprocessing
+#then in metrics folder just plot them....
+#start with moving 5-8 forks metric for instance..

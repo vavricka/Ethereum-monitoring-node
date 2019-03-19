@@ -9,7 +9,7 @@ from pathlib import Path
 if len(sys.argv) != 2:
     sys.exit(sys.argv[0], ": expecting one parameter")
 
-BLOCKS_LOG = sys.argv[1]                      #input .log  (not .csv)
+BLOCKS_LOG = sys.argv[1]   # blocks-stage-4.log
 
 #check - that log-file exists
 if not os.path.isfile(BLOCKS_LOG):

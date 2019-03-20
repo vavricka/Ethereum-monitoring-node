@@ -9,7 +9,7 @@ if len(sys.argv) != 3:
     sys.exit(sys.argv[0], ": expecting 2 parameters.")
 
 TXS_LOG = sys.argv[1] #txs-stage-3.log
-BLOCKS_LOG = sys.argv[2] #blocks-stage-3.log
+BLOCKS_LOG = sys.argv[2] #blocks-stage-3.log or any newer.. e.g. stage-4
 
 if not os.path.isfile(TXS_LOG):
     sys.exit(TXS_LOG, ": does not exists!")
@@ -36,7 +36,7 @@ dtypes = {
         'CapturedLocally'   : 'object',
         'GasUsed'           : 'object',
         'InMainBlock'       : 'object',
-        'InBlocks'          : 'object',
+        'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
         'CommitTime'        : 'object',
         'NeverCommiting'    : 'object',
@@ -64,7 +64,7 @@ dtypes_blocks = {
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InBlocks','InOrder','CommitTime','NeverCommiting',
+            'InMainBlock','InUncleBlocks','InOrder','CommitTime','NeverCommiting',
             'RemoteTimeStamp'],
             index_col=False, dtype=dtypes)
 
@@ -78,7 +78,7 @@ blocks = pd.read_csv(BLOCKS_LOG,
 #(11) python3 Step-3-Assign-Blocks-To-Txs.py txs-stage-3.log blocks-stage-3.log
 #(Result) txs-stage-4.log with two last params set:
 #     InMainBlock ..hash of the main blocks, if the txs isn't in any, pd.nan
-#     InBlocks - semicolon separated list in which this txs is located..
+#     InUncleBlocks - semicolon separated list of UncleBlocks in which this txs is located..
 #  +  NeverCommiting - False in all txs with InMainBlock set..
 
 #sort txs by Hash..
@@ -107,18 +107,20 @@ for i, row in blocks.iterrows():
                 
                 #SET InMainBlock 
                 if row['BlockType'] == "Main":
-                        txs.at[line,'InMainBlock'] = i
-                        txs.at[line,'NeverCommiting'] = "False"
+                    txs.at[line,'InMainBlock'] = i
+                    txs.at[line,'NeverCommiting'] = "False"
 
-                ## append i (hash of curr block)   to inBlocks
-                tmp_inblocks = txs.at[line,'InBlocks']
-                
-                if pd.isnull(tmp_inblocks):
-                    tmp_inblocks = i + ";"
+                #ELSE set InUncleBlocks
                 else:
-                    tmp_inblocks = tmp_inblocks + i + ";"
+                    ## append i (hash of curr block)   to inBlocks
+                    tmp_inblocks = txs.at[line,'InUncleBlocks']
 
-                txs.at[line,'InBlocks'] = tmp_inblocks
+                    if pd.isnull(tmp_inblocks):
+                        tmp_inblocks = i + ";"
+                    else:
+                        tmp_inblocks = tmp_inblocks + i + ";"
+
+                    txs.at[line,'InUncleBlocks'] = tmp_inblocks
 
             #it is not there -> nothing to do here
             else:

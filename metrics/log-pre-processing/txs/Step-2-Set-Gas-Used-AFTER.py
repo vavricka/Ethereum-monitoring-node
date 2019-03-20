@@ -36,7 +36,7 @@ dtypes = {
         'CapturedLocally'   : 'object',
         'GasUsed'           : 'object',
         'InMainBlock'       : 'object',
-        'InBlocks'          : 'object',
+        'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
         'CommitTime'        : 'object',
         'NeverCommiting'    : 'object',
@@ -54,7 +54,7 @@ dtypes_gas = {
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InBlocks','InOrder','CommitTime','NeverCommiting',
+            'InMainBlock','InUncleBlocks','InOrder','CommitTime','NeverCommiting',
             'RemoteTimeStamp'],
             index_col=False, dtype=dtypes)
 

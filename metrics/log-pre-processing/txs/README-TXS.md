@@ -30,7 +30,7 @@
 (11) python3 Step-3-Assign-Blocks-To-Txs.py txs-stage-3.log blocks-stage-3.log
 (Result) txs-stage-4.log with two last params set:
      InMainBlock (Boolean) - if one of the blocks in which this tx is is Main-chain
-     InBlocks - semicolon separated list in which this txs is located..
+     InUncleBlocks - semicolon separated list of uncle-blocks in which this txs is located..
 
 (...) txs-stage.4.log is the final log-file with uniqe txs with all values set.
      Next step is to run individiual metrics.

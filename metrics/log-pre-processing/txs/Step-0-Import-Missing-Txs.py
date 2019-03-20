@@ -56,12 +56,12 @@ remote_txs = pd.read_csv(REMOTE_TXS,
 
 # add  4 columns to loc & all captLoc = True
 local_txs = local_txs.assign(CapturedLocally = True, GasUsed = np.nan, InMainBlock = np.nan,
-    InBlocks = np.nan, InOrder = np.nan, CommitTime = np.nan, NeverCommiting = np.nan,
+    InUncleBlocks = np.nan, InOrder = np.nan, CommitTime = np.nan, NeverCommiting = np.nan,
     RemoteTimeStamp = np.nan)
 
 # add  4 columns to loc & all captLoc = False
 remote_txs = remote_txs.assign(CapturedLocally = False, GasUsed = np.nan, InMainBlock = np.nan,
-    InBlocks = np.nan, InOrder = np.nan, CommitTime = np.nan, NeverCommiting = np.nan,
+    InUncleBlocks = np.nan, InOrder = np.nan, CommitTime = np.nan, NeverCommiting = np.nan,
     RemoteTimeStamp = np.nan)
 
 #merge both together

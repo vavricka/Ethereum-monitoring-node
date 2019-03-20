@@ -47,6 +47,12 @@ blocks = pd.read_csv(BLOCKS_LOG,
 total_blocks = len(blocks)
 print("Total Blocks: ", total_blocks)
 
+print("--")
+print("min block-num:", blocks['Number'].min())
+print("max block-num:", blocks['Number'].max())
+print("num of unique block numbers:", int(blocks['Number'].max()) - int(blocks['Number'].min()) +1)
+print("--")
+
 num_main = len(blocks[blocks.BlockType == "Main"])
 print("Main:", num_main, "rate:", num_main / total_blocks)
 
@@ -62,8 +68,6 @@ print("Uncle:", num_uncle, "rate:", num_uncle / total_blocks)
 
 print("Verifying Uncle+Main", num_main + num_uncle,
     "=?", len(blocks), "blocks")
-
-
 
 
 
@@ -103,9 +107,22 @@ for i, row in uncles.iterrows():
                 parentHash = curr_block.ParentHash.values[0]
 
 
+
+
 print("fork not set:", len(uncles[uncles.ForkLength == 0]))
-print("fork len 1:", len(uncles[uncles.ForkLength == 1]))
-print("fork len 2:", len(uncles[uncles.ForkLength == 2]))
-print("fork len 3:", len(uncles[uncles.ForkLength == 3]))
-print("fork len >3:", len(uncles[uncles.ForkLength > 3]))
+if len(uncles[uncles.ForkLength == 0]) == 0:
+    print(".. as expected")
+    print(uncles[uncles.ForkLength == 0])
+else:
+    print("!!! that's bad - check them manually:")
+
+
+for x in range(1, 4):
+    print("fork len", x, ":", len(uncles[uncles.ForkLength == x]))
+    print("fork len", x, "& Unrecognized:", len(uncles[(uncles.ForkLength == x) & (uncles.BlockType == "Uncle")]))
+    print("fork len", x, "& RECOGNIZED:", len(uncles[(uncles.ForkLength == x) & (uncles.BlockType == "Recognized")]))
+    print("--")
+    #print(uncles[uncles.ForkLength == x])
+
+print("fork len >= 5:", len(uncles[uncles.ForkLength >= 5]))
 

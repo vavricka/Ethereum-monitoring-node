@@ -58,6 +58,4 @@
       Not-recognized Uncles: 25 (Local: 25 Imported: 0)
       Recognized Uncles: 1592 (Local: 1580 Imported: 12)
 
-#TODO - calculate metrics here in preprocessing
-#then in metrics folder just plot them....
-#start with moving 5-8 forks metric for instance..
+(11) go to metrics and run 5-8-prev.-of-forks. etc. on the blocks-stage-4.log

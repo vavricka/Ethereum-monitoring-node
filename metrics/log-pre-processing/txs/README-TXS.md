@@ -25,12 +25,12 @@
      it can also yell err when it reaches a txs with different gasUsed..
      do diff txs-stage-3.log and txs-stage-2.log to check some gasUsed were added..
 
-(10) Make sure that blocks-stage-3.log already exists
+(10) Make sure that blocks-stage-3.log already exists (or stage-4 is also fine)
 
 (11) python3 Step-3-Assign-Blocks-To-Txs.py txs-stage-3.log blocks-stage-3.log
 (Result) txs-stage-4.log with two last params set:
      InMainBlock (Boolean) - if one of the blocks in which this tx is is Main-chain
      InUncleBlocks - semicolon separated list of uncle-blocks in which this txs is located..
 
-(...) txs-stage.4.log is the final log-file with uniqe txs with all values set.
-     Next step is to run individiual metrics.
+(12) python3 Step-4-Commit-Times.py txs-stage-4.log blocks-stage-4.log  #(blocks-stage can be any 3+)
+(Result) txs-stage-5.log  with commit times set

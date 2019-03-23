@@ -55,7 +55,7 @@ dtypes_blocks = {
         'BlockSize'     : 'object',
         'ListOfTxs'     : 'object',
         'ListOfUncles'  : 'object',
-        'CapturedLocally'   : 'bool',
+        'CapturedLocally'   : 'object',# obj == str;  not bool! intentional
         'BlockType'         : 'object',
         }
 
@@ -66,8 +66,7 @@ txs = pd.read_csv(TXS_LOG,
             'InMainBlock','InUncleBlocks','InOrder','NeverCommiting','RemoteTimeStamp',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'], dtype=dtypes)
 
-#load blocks   only timestamps   and hashes 
-#
+#load blocks
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
@@ -75,9 +74,32 @@ blocks = pd.read_csv(BLOCKS_LOG,
     dtype=dtypes_blocks,
     usecols=['LocalTimeStamp','BlockHash','Number','CapturedLocally','BlockType']
     )
-#blocks:  #  drop  not MAIN blocks..  and not capt locall.
+#blocks:  #  drop  not MAIN blocks..
 blocks = blocks[blocks.BlockType == "Main"]   # DROP Uncles; (= leave Main blocks only)
-blocks = blocks[blocks.CapturedLocally == True] # DROP blocks not captured locally (=leave loc)
+
+print("Main blocks before drop:", len(blocks))
+
+#first sort blocks (temporarily by Number)
+blocks = blocks.sort_values(by=['Number'])
+blocks.reset_index(inplace=True, drop=True)
+
+# loop through all blocks
+for i in blocks.index:
+    #CapturedLocally is False?
+    if blocks.at[i,'CapturedLocally'] == "False":
+        #mark 20 blocks around it as "Drop"
+        for x in range(i - 10, i + 11):
+            try:
+                if blocks.at[x,'CapturedLocally'] != "False":
+                    blocks.at[x,'CapturedLocally'] = "Drop"
+            except KeyError:
+                pass
+
+# drop both  "False" and "Drop"  blocks
+blocks = blocks[blocks.CapturedLocally == "True"]
+
+print("Main blocks after dropping not Locally capt and their neighbours:", len(blocks))
+
 
 # blocks2 = copy of blocks sorted by Num..
 blocks2 = blocks.copy()
@@ -87,7 +109,7 @@ blocks = blocks.sort_values(by=['BlockHash'])
 blocks.reset_index(inplace=True, drop=True)
 
 #  blocks2  sort by num..
-blocks2.sort_values(by=['Number'])
+blocks2 = blocks2.sort_values(by=['Number'])
 blocks2.reset_index(inplace=True, drop=True)
 
 print("sorting done, starting for loop")

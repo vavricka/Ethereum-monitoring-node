@@ -88,7 +88,7 @@ for i in blocks.index:
     #CapturedLocally is False?
     if blocks.at[i,'CapturedLocally'] == "False":
         #mark 20 blocks around it as "Drop"
-        for x in range(i - 10, i + 11):
+        for x in range(i - 15, i + 16):
             try:
                 if blocks.at[x,'CapturedLocally'] != "False":
                     blocks.at[x,'CapturedLocally'] = "Drop"

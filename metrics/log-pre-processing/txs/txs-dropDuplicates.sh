@@ -38,7 +38,7 @@ done
 python3 txs-dropDuplicates.py $LOG_NAME
 
 # step 2 - concatenate the unique-txs.log.x ... into one
- touch $UNIQUE_LOG.FINAL
+touch $UNIQUE_LOG.FINAL
 NUM=0
 while true
 do

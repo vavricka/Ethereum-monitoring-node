@@ -12,11 +12,11 @@
 (5) python3 showHoles-Blocks.py unique-unique-blocks.log.FINAL
    prints holes in logs... as well as non-sense and eth classic blocs
    manually locate MIN and MAX valid blocknumbers you want to preserve
-(5b) python3 extractWeirdBlocks unique-unique-blocks.log.FINAL <MIN> <MAX>
+(5b) python3 extractWeirdBlocks.py unique-unique-blocks.log.FINAL <MIN> <MAX>
    where MIN and MAX are respective blocks (inlcusive) you want to preserve
    it will generate $1.withoutWeirdBlocks and $1.weirdBlocks  files
    in case move possible broken blocks from the first to the second file
-(5c) python3 showHoles-Blocks.py $1.withoutWeirdBlocks
+(5c) python3 showHoles-Blocks.py unique-unique-blocks.log.FINAL.withoutWeirdBlocks
    final check
 (5d) manually:
      $mv unique-unique-blocks.log.FINAL.withoutWeirdBlocks blocks-stage-0.log
@@ -46,7 +46,7 @@
   Input blocks-stage-2.log
   Output blocks-stage-3.log (with set BlockType='Main','Uncle')
 
-(9) Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
+(9) python3 Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
    sets Uncles that are included in the ListOfUncles property of some block from Main chain as Recognized.
    Output: blocks-stage-4.log with all blocktypes set : Main/Uncle/Recognized (=recognized uncle)
 

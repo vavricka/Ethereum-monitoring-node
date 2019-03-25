@@ -6,8 +6,8 @@ import os
 from pathlib import Path
 
 #save to file
-#import matplotlib as mpl
-#mpl.use('Agg')
+import matplotlib as mpl
+mpl.use('Agg')
 
 import matplotlib.pyplot as plt
 
@@ -98,7 +98,7 @@ print("txs CommitTime12 < 0:", len(txs[txs.CommitTime12 <0]))
 print("txs CommitTime36 < 0:", len(txs[txs.CommitTime36 <0]))
 
 #TMP maybe uncomment  ..   filter  time>1000....
-#txs = txs[txs.CommitTime0 < 1000]
+#txs = txs[txs.CommitTime0 < 2900]
 
 print("txs CommitTime0 > 1000:", len(txs[txs.CommitTime0 > 1000]))
 print("txs CommitTime0 > 2000:", len(txs[txs.CommitTime0 > 2000]))
@@ -122,7 +122,7 @@ s_c3 = txs[txs.CommitTime3.notnull()].CommitTime3   #check
 s_c12 = txs[txs.CommitTime12.notnull()].CommitTime12   #check
 s_c36 = txs[txs.CommitTime36.notnull()].CommitTime36   #check
 
-bin_seq = list(range(0,10000,1))   #TODO CHANGE !!!  set to  max CommitTIme .. eg 1000
+bin_seq = list(range(0,1000,1))   #TODO CHANGE !!!  set to  max CommitTIme .. eg 1000
 fig, ax = plt.subplots()
 
 
@@ -143,7 +143,7 @@ cdf_c36 = np.cumsum (counts_c36)
 linec36, = ax.plot (bin_edges_c36[1:], cdf_c36/cdf_c36[-1], label='36 confirmations')
 
 
-plt.xlabel('xlabel')
+plt.xlabel('seconds')
 plt.yticks(np.arange(0, 1.1, step=0.1),['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'])
 #
 #plt.xscale('symlog')
@@ -163,8 +163,8 @@ plt.xticks(nums, labels)
 ax.legend()
 #
 ##LOCAL show
-plt.show()
+#plt.show()
 ##save to file
-#plt.savefig('5-5-txs-gasUsed.pdf')
+plt.savefig('5-3.pdf')
 
 

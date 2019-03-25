@@ -8,7 +8,7 @@ from pathlib import Path
 if len(sys.argv) != 2:
     sys.exit(sys.argv[0], ": expecting 1 parameter.")
 
-TXS_LOG = sys.argv[1] #txs-stage-4.log
+TXS_LOG = sys.argv[1] #"txs-stage-5.log"
 
 if not os.path.isfile(TXS_LOG):
     sys.exit(TXS_LOG, ": does not exists!")
@@ -31,18 +31,23 @@ dtypes = {
         'InMainBlock'       : 'object',
         'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
-        'CommitTime'        : 'object',
         'NeverCommiting'    : 'object',
         'RemoteTimeStamp'   : 'object',
+        'CommitTime0'       : 'float',
+        'CommitTime3'       : 'float',
+        'CommitTime12'      : 'float',
+        'CommitTime36'      : 'float',
         }
 
+
+#load txs  ALL fields  #sort NOT
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InUncleBlocks','InOrder','CommitTime','NeverCommiting',
-            'RemoteTimeStamp'], dtype=dtypes,
-            usecols=['InMainBlock','InUncleBlocks'])
-
+            'InMainBlock','InUncleBlocks','InOrder','NeverCommiting','RemoteTimeStamp',
+            'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
+            usecols=['InMainBlock','InUncleBlocks'],
+            dtype=dtypes)
 
 
 print( "num of txs total:")

@@ -5,6 +5,12 @@ import sys
 import os
 from pathlib import Path
 
+#save to file
+#import matplotlib as mpl
+#mpl.use('Agg')
+#
+#import matplotlib.pyplot as plt
+
 if len(sys.argv) != 2:
     sys.exit(sys.argv[0], ": expecting 1 parameter.")
 
@@ -17,7 +23,7 @@ dtypes = {
         'LocalTimeStamp'    : 'object',
         'Hash'              : 'object',
         'GasLimit'          : 'object',
-        'GasPrice'          : 'object',
+        'GasPrice'          : 'float',
         'Value'             : 'object',
         'Nonce'             : 'object',
         'MsgType'           : 'object',
@@ -39,48 +45,35 @@ dtypes = {
         'CommitTime36'      : 'float',
         }
 
-
 #load txs  ALL fields  #sort NOT
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
             'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
-            usecols=['InMainBlock','InUncleBlocks'],
+            usecols=['NeverCommitting','ValidityErr'],
             dtype=dtypes)
 
 
-print( "num of txs total:")
-TXS_TOTAL = len(txs)
-print(TXS_TOTAL)
 
-print( "num of txs THAT ARE  in some MAIN")
-print(  len(  txs[  txs['InMainBlock'].notnull() ]    ))
+def printMetric(txs):
+    txs_all = len(txs)
+    print("tot", txs_all)
 
-print( "num of txs THAT are not in any MAIN")
-print(len(txs[   pd.isnull( txs.InMainBlock )   ] )  )
+    may_commit = sum(txs['NeverCommitting'].isnull())
+    print("still may commit ", may_commit, "| {0:.4f}%".format(may_commit/txs_all * 100)  )
 
+    never_commit = len(txs[(txs['NeverCommitting'] == "NeverCommitting")])
+    print("will never commit ", never_commit, "| {0:.4f}%".format(never_commit/txs_all * 100)  )
 
-print( "num of txs THAT are not in any UNCLE")
-print(len(txs[   pd.isnull( txs.InUncleBlocks )   ] )  )
-
-
-print( "num of txs THAT ARE  in some UNCLE")
-print(  len(  txs[  txs['InUncleBlocks'].notnull() ]    ))
+    committed_txs =  len(txs[(txs['NeverCommitting'] == "Committed")])
+    print("committed ", committed_txs ,   "| {0:.4f}%".format(committed_txs/txs_all * 100)  )
 
 
 
-print("------ THE ACTUAL metric starts here:")
+printMetric(txs)
 
+print ("only valid txs:")
+txs.drop(txs[(txs['ValidityErr'] != "nil")].index, inplace=True)
 
-
-# not dup tx ---   inMain=True  InBlocks == 1  (= only in MAIN)
-DUP_TXS = len(  txs[  (txs['InUncleBlocks'].notnull()) &   (txs['InMainBlock'].notnull())     ]    )
-print( "Duplicate txs:")
-print(DUP_TXS)
-
-
-#last calculate proportions..
-print("the proportion of duplicate txs to all txs in main-blocks is:", DUP_TXS/TXS_TOTAL, "  |",
-    DUP_TXS, "/", TXS_TOTAL)
-
+printMetric(txs)

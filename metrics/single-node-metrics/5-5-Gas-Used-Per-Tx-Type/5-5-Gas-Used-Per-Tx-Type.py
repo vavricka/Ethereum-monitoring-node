@@ -37,7 +37,7 @@ dtypes = {
         'InMainBlock'       : 'object',
         'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
-        'NeverCommiting'    : 'object',
+        'NeverCommitting'    : 'object',
         'RemoteTimeStamp'   : 'object',
         'CommitTime0'       : 'float',
         'CommitTime3'       : 'float',
@@ -48,7 +48,7 @@ dtypes = {
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InUncleBlocks','InOrder','NeverCommiting','RemoteTimeStamp',
+            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             usecols=['Hash', 'MsgType', 'ValidityErr', 'GasUsed'],
             dtype=dtypes)

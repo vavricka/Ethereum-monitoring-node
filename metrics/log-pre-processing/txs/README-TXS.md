@@ -37,3 +37,11 @@
 (12) $time python3 Step-4-Commit-Times.py txs-stage-4.log blocks-stage-4.log  #(blocks-stage can be any 3+)
      82m (ANG)
 (Result) txs-stage-5.log  with commit times set
+
+(13 TODO)   $python3 Step-5-Never-Commiting.py txs-stage-5.log
+(Result) txs-stage-6.log   with  NeverCommitting  set True   on txs that will never commit
+     TODO  not done yet
+
+(14 TODO) $python3 Step-6-Set-In-Order.py txs-stage-6.log
+(Result) txs-stage-7.log   with  InOrder  set
+     TODO  not done yet

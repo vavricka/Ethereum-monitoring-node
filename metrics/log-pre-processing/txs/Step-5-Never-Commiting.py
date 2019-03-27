@@ -5,10 +5,14 @@ import sys
 import os
 from pathlib import Path
 
+from sortedcontainers import SortedSet
+
 if len(sys.argv) != 2:
     sys.exit(sys.argv[0], ": expecting 1 parameter.")
 
 TXS_LOG = sys.argv[1] #"txs-stage-5.log"
+
+TXS_OUT = "txs-stage-6.log"
 
 if not os.path.isfile(TXS_LOG):
     sys.exit(TXS_LOG, ": does not exists!")
@@ -33,12 +37,11 @@ dtypes = {
         'InOrder'           : 'object',
         'NeverCommitting'    : 'object',
         'RemoteTimeStamp'   : 'object',
-        'CommitTime0'       : 'float',
-        'CommitTime3'       : 'float',
-        'CommitTime12'      : 'float',
-        'CommitTime36'      : 'float',
+        'CommitTime0'       : 'object',
+        'CommitTime3'       : 'object',
+        'CommitTime12'      : 'object',
+        'CommitTime36'      : 'object',
         }
-
 
 #load txs  ALL fields  #sort NOT
 txs = pd.read_csv(TXS_LOG,
@@ -46,41 +49,25 @@ txs = pd.read_csv(TXS_LOG,
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
             'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
-            usecols=['InMainBlock','InUncleBlocks'],
             dtype=dtypes)
 
+committed_txs = txs.loc[txs['NeverCommitting'] == "Committed", ['From','Nonce']]   
+uncommitted_txs = txs.loc[txs['NeverCommitting'] != "Committed", ['From','Nonce']]  
 
-print( "num of txs total:")
-TXS_TOTAL = len(txs)
-print(TXS_TOTAL)
+ss = SortedSet()
+# create sorted series_commited_txs    of tuples  (From, Nonce)  
+for i in committed_txs.index:
+    tmp_tuple = (committed_txs.at[i,'From'], committed_txs.at[i,'Nonce'])
+    ss.add(tmp_tuple)
+#                                                                    = may-comm.
+#   BEFORE       NeverCommitting  [ Committed   | nil              |   nil      ]
+#   AFTER        NeverCommitting  [ Committed   | NeverCommitting  |   nil      ]
 
-print( "num of txs THAT ARE  in some MAIN")
-print(  len(  txs[  txs['InMainBlock'].notnull() ]    ))
+for i in uncommitted_txs.index:
+    tmp_tuple = (uncommitted_txs.at[i,'From'], uncommitted_txs.at[i,'Nonce'])
+    
+    if tmp_tuple in ss:
+        txs.at[i,'NeverCommitting'] = "NeverCommitting"
 
-print( "num of txs THAT are not in any MAIN")
-print(len(txs[   pd.isnull( txs.InMainBlock )   ] )  )
-
-
-print( "num of txs THAT are not in any UNCLE")
-print(len(txs[   pd.isnull( txs.InUncleBlocks )   ] )  )
-
-
-print( "num of txs THAT ARE  in some UNCLE")
-print(  len(  txs[  txs['InUncleBlocks'].notnull() ]    ))
-
-
-
-print("------ THE ACTUAL metric starts here:")
-
-
-
-# not dup tx ---   inMain=True  InBlocks == 1  (= only in MAIN)
-DUP_TXS = len(  txs[  (txs['InUncleBlocks'].notnull()) &   (txs['InMainBlock'].notnull())     ]    )
-print( "Duplicate txs:")
-print(DUP_TXS)
-
-
-#last calculate proportions..
-print("the proportion of duplicate txs to all txs in main-blocks is:", DUP_TXS/TXS_TOTAL, "  |",
-    DUP_TXS, "/", TXS_TOTAL)
-
+#OUT
+txs.to_csv(TXS_OUT, index=False, header=False)

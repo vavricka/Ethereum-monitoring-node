@@ -38,10 +38,10 @@
      82m (ANG)
 (Result) txs-stage-5.log  with commit times set
 
-(13 TODO)   $python3 Step-5-Never-Commiting.py txs-stage-5.log
-(Result) txs-stage-6.log   with  NeverCommitting  set True   on txs that will never commit
-     TODO  not done yet
+(13)   $python3 Step-5-Never-Commiting.py txs-stage-5.log //NeverCommitting [ Committed | nil ]
+     (super fast)
+(Result) txs-stage-6.log   with  NeverCommitting set [ Committed | NeverCommitting | nil ]  
 
-(14 TODO) $python3 Step-6-Set-In-Order.py txs-stage-6.log
-(Result) txs-stage-7.log   with  InOrder  set
-     TODO  not done yet
+(14) $python3 Step-6-Set-In-Order.py txs-stage-6.log
+     (cca 20 min ANG)
+(Result) txs-stage-7.log   InOrder set True/False for every NeverCommitting==Commited..  nil otherwise (must be object, not bool!)  

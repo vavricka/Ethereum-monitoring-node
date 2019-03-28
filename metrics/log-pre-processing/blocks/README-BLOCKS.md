@@ -58,4 +58,11 @@
       Not-recognized Uncles: 25 (Local: 25 Imported: 0)
       Recognized Uncles: 1592 (Local: 1580 Imported: 12)
 
-(11) go to metrics and run 5-8-prev.-of-forks. etc. on the blocks-stage-4.log
+(11) blocks-stage-4.log is the final log-file to calculate single-node metrics
+
+---
+
+(12) $python3 Step-4-Propagation-Delays.py blocks-stage-4.log.ANGAINOR blocks-stage-4.Falcon
+   Output: blocks-propagation-times.log with delays set, csv-template i nmetrics/multiple-nodes-metrics/5-1..../blocks-propagation-times.csv
+
+   (TODO? if we dicide to use more than two Geth nodes, modify this for more servers...)

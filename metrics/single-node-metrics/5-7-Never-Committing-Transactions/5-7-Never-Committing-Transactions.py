@@ -5,12 +5,6 @@ import sys
 import os
 from pathlib import Path
 
-#save to file
-#import matplotlib as mpl
-#mpl.use('Agg')
-#
-#import matplotlib.pyplot as plt
-
 if len(sys.argv) != 2:
     sys.exit(sys.argv[0], ": expecting 1 parameter.")
 

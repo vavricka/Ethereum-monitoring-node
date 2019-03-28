@@ -45,3 +45,15 @@
 (14) $python3 Step-6-Set-In-Order.py txs-stage-6.log
      (cca 20 min ANG)
 (Result) txs-stage-7.log   InOrder set True/False for every NeverCommitting==Commited..  nil otherwise (must be object, not bool!)  
+
+! txs-stage-7.log is the final log-file to calculate single-node metrics
+
+---
+multiple-node metrics:
+
+(15) $python3 Step-7-Set-Propagation-Delays.py txs-stage-7.log.ANGAINOR txs-stage-7.log.FALCON
+          #(can be even smaller stage, e.g. 5... )
+          26 m Angainor
+(Results) txs-propagation-times.log with propagation delays set
+ csv-template in metrics/multi../5-2../txs-propagation-times.csv
+     (TODO?) if we decide for more geth peers, need to be extended a bit)

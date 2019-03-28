@@ -86,7 +86,7 @@ plt.xticks(nums, labels)
 
 
 #LOCAL show
-plt.show()
+#plt.show()
 #save to file
 plt.savefig('5-1-block-propagation-time.pdf')
 

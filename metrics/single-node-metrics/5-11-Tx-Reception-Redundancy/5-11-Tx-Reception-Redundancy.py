@@ -1,17 +1,43 @@
 #!/usr/bin/python3
-
 import pandas as pd
+import numpy as np
 
-TX_CSV = "txs.csv"
+#TXS_LOG = "txs.log.FINAL"
+TXS_LOG = "txs.log.FINAL.28T00"
 
-#read file into DataFrame
-txs = pd.read_csv(TX_CSV, usecols=["Hash"])
 
-#print for each unique txHash it's number of occurencies
-#print(txs["Hash"].value_counts())
+dtypes = {
+        'LocalTimeStamp'    : 'object',
+        'Hash'              : 'object',
+        'GasLimit'          : 'object',
+        'GasPrice'          : 'object',
+        'Value'             : 'object',
+        'Nonce'             : 'object',
+        'MsgType'           : 'object',
+        'Cost'              : 'object',
+        'Size'              : 'object',
+        'To'                : 'object',
+        'From'              : 'object',
+        'ValidityErr'       : 'object',
+        }
 
-occurencies = pd.value_counts(txs["Hash"].value_counts().values)
-for i, row in occurencies.iteritems():
-    print("In total", row, "txs were received", i, "times")
+txs = pd.read_csv(TXS_LOG, 
+    names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
+   'Cost','Size','To','From','ValidityErr'], 
+   usecols=['Hash'], dtype=dtypes)
 
-print("Avg number of tx reception", txs["Hash"].value_counts().values.mean())
+# FIRST  make sure you dropped first x    txs when there were <20 peers !
+# check it via peers.log ....
+
+#txs.sort_values(by=['Hash'], inplace=True)
+#txs.reset_index(inplace=True, drop=True)
+
+
+vals = txs["Hash"].value_counts().values
+
+print("Average number of tx reception",  vals.mean()  )
+
+#print("occurenciesn",  pd.value_counts(vals)  )
+
+print("Median number of tx reception", np.median(vals)  )
+

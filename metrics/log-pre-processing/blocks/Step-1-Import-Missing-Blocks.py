@@ -15,12 +15,15 @@ from pathlib import Path
 #  Input: blocks-stage-1.log.LOC blocks-stage-1.log.REM
 #  Output blocks-stage-2.log  with two more params:  BlockType,CapturedLocally
 
-if len(sys.argv) != 3:
-    sys.exit(sys.argv[0], ": expecting 2 parameters.")
+if len(sys.argv) != 4:
+    sys.exit(sys.argv[0], ": expecting 3 parameters.")
 
 #INPUT FILES
 LOCAL_BLOCKS = sys.argv[1] #"blocks-stage-1.log.LOC"
 REMOTE_BLOCKS = sys.argv[2]
+
+#output of this script
+BLOCKS_FINAL_LOG = sys.argv[3]
 
 if not os.path.isfile(LOCAL_BLOCKS):
     sys.exit(LOCAL_BLOCKS, ": does not exists!")
@@ -28,22 +31,23 @@ if not os.path.isfile(LOCAL_BLOCKS):
 if not os.path.isfile(REMOTE_BLOCKS):
     sys.exit(REMOTE_BLOCKS, ": does not exists!")
 
-#output of this script
-BLOCKS_FINAL_LOG = "blocks-stage-2.log"
+if os.path.isfile(BLOCKS_FINAL_LOG):
+    sys.exit(BLOCKS_FINAL_LOG, ": ALREADY EXISTS not exists!")
 
 local_blocks = pd.read_csv(LOCAL_BLOCKS, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
-    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles'])
+    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
+    'CapturedLocally','BlockType'])
 
 remote_blocks = pd.read_csv(REMOTE_BLOCKS, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
-    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles'])
+    'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
+    'CapturedLocally','BlockType'])
 
-# add  two columns to loc & all captLoc = True
-local_blocks = local_blocks.assign(CapturedLocally = 'True', BlockType = np.nan)
+# na -> to True,   False remains False...
+local_blocks.CapturedLocally = local_blocks.CapturedLocally.fillna('True')
 
-# add  two columns to loc & all captLoc = False
-remote_blocks = remote_blocks.assign(CapturedLocally = 'False', BlockType = np.nan)
+remote_blocks['CapturedLocally'] = 'False'
 
 #loop through all remote blocks
 for _, row in remote_blocks.iterrows():

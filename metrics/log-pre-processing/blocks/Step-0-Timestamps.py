@@ -23,11 +23,17 @@ announcements = announcements.sort_values(by=['BlockHash'])
 for i, row in blocks.iterrows():
 
     # searchsorted uses Binary search so it's fast.
-    line = announcements['BlockHash'].searchsorted(row['BlockHash']) 
+    try:
+        line = announcements['BlockHash'].searchsorted(row['BlockHash']) 
 
-    if row['BlockHash'] == announcements.iloc[line][1]:
-        if pd.to_datetime(announcements.iloc[line][0]) < pd.to_datetime(row['LocalTimeStamp']):
-           blocks.iat[i,0] = announcements.iloc[line][0]
+        if row['BlockHash'] == announcements.iloc[line][1]:
+            if pd.to_datetime(announcements.iloc[line][0]) < pd.to_datetime(row['LocalTimeStamp']):
+               blocks.iat[i,0] = announcements.iloc[line][0]
+    except (IndexError, KeyError):
+        continue
+
+#add two params
+blocks = blocks.assign(CapturedLocally = np.nan, BlockType = np.nan)
 
 # Gen out file
 blocks.to_csv(BLOCKS_FINAL_LOG, index=False, header=False)

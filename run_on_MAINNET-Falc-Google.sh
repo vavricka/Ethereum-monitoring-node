@@ -8,8 +8,7 @@ export DATA_PATH="$PROJ_ROOT/clients-data"
 
 export GETH="$PROJ_ROOT/go-ethereum"
 
-nohup "$GETH/build/bin/geth" --syncmode "fast" --identity \
-"INESC" --datadir "$DATA_PATH" \
---cache=16384 --maxpeers 1500 --maxpendpeers 150 \
+nohup "$GETH/build/bin/geth" --syncmode "fast" \
+--datadir "$DATA_PATH" \
+--cache=6000 --maxpeers 800 --maxpendpeers 80 \
 --lightpeers 0 --txpool.pricelimit 0 &>>"/dev/null" &
-#--verbosity 5 &>>"/mnt/ssd_1tb/dvavricka/logs/geth-out.log" &

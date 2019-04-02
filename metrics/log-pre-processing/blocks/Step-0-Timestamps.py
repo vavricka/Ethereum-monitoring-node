@@ -32,8 +32,8 @@ for i, row in blocks.iterrows():
     except (IndexError, KeyError):
         continue
 
-#add two params
-blocks = blocks.assign(CapturedLocally = np.nan, BlockType = np.nan)
+#add three params
+blocks = blocks.assign(CapturedLocally = np.nan, BlockType = np.nan, ForkLength = 0)
 
 # Gen out file
 blocks.to_csv(BLOCKS_FINAL_LOG, index=False, header=False)

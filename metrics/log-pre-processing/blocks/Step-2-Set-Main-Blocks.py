@@ -18,7 +18,7 @@ BLOCKS_FINAL_LOG = "blocks-stage-3.log"
 blocks = pd.read_csv(NEWBLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'], index_col='BlockHash')
+    'CapturedLocally','BlockType','ForkLength'], index_col='BlockHash')
 
 # search by blockHash because we will be looking for blocks based on this propery
 blocks = blocks.sort_values(by=['BlockHash'])
@@ -47,6 +47,6 @@ blocks.reset_index(level=0, inplace=True)
 blocks = blocks.reindex (
     columns=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'])
+    'CapturedLocally','BlockType','ForkLength'])
 
 blocks.to_csv(BLOCKS_FINAL_LOG, index=False, header=False)

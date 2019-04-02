@@ -22,10 +22,9 @@
      $mv unique-unique-blocks.log.FINAL.withoutWeirdBlocks blocks-stage-0.log
 
 (6) $python3 Step-0-Timestamps.py
- this sets the lowest timestamp of block reception and 
+ this sets the lowest timestamp of block reception and adds 3 params 
  files blocks-stage-0.log and unique-unique-blockAnnouncements.log.FINAL)
- Output: blocks-stage-1.log     (with two more params:  BlockType,CapturedLocally   -both not set)
-
+ Output: blocks-stage-1.log   (with 3 more params:  BlockType,CapturedLocally -both not set, ForkLength=0)
 
 (7) $python3 Step-1-Import-Missing-Blocks.py blocks-stage-1.log.LOC blocks-stage-1.log.REMOTE  <out-file>
 
@@ -35,10 +34,8 @@ $python3 Step-1-Import-Missing-Blocks.py tmp-blcks-A-F blocks-stage-1.log.S1-US 
 $python3 Step-1-Import-Missing-Blocks.py tmp-blcks-A-F-S1 blocks-stage-1.log.S2-CN tmp-blcks-A-F-S1-S2
 $mv tmp-blcks-A-F-S1-S2 blocks-stage-2.log.ANGAINOR
 
-
 (7b) every machine (except angainor):
 $python3 Step-1-Import-Missing-Blocks.py blocks-stage-1.log.LOC blocks-stage-2.log.ANGAINOR blocks-stage-2.log
-
 
 ----
   Output blocks-stage-2.log  
@@ -50,10 +47,8 @@ $python3 Step-1-Import-Missing-Blocks.py blocks-stage-1.log.LOC blocks-stage-2.l
   script and in this case, the LocalTimestamp does not count...
 ---
 
-
 (7c) python3 Step-1-B-Verify-Holes.py blocks-stage-2.log    # ther must be no HOLES !
      # otherwise, import from etherscan or whatever..
-
 
 --
 from here, it's enough to do it on angainor only
@@ -67,9 +62,12 @@ from here, it's enough to do it on angainor only
   Input blocks-stage-2.log
   Output blocks-stage-3.log (with set BlockType='Main','Uncle')
 
-(9) python3 Step-3-Set-Recognized-Uncles.py blocks-stage-3.log
+(9) python3 Step-3-Set-Recognized-Uncles-and-Fork-Lengths.py blocks-stage-3.log
    sets Uncles that are included in the ListOfUncles property of some block from Main chain as Recognized.
    Output: blocks-stage-4.log with all blocktypes set : Main/Uncle/Recognized (=recognized uncle)
+   !!!  check the command line output, it may say that it was not able to set fork-lenght for one of the blocks in
+   !!!  the very beginning of the log file. due to missing data
+
 
 (10) $python3 BlockTypes.py blocks-stage-4.log
    shows some statistics like this:

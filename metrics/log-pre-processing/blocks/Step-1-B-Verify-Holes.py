@@ -16,7 +16,7 @@ if not os.path.isfile(BLOCKS_LOG):
 blocks = pd.read_csv(BLOCKS_LOG,
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'])
+    'CapturedLocally','BlockType','ForkLength'])
 
 #sort
 blocks = blocks.sort_values('Number')
@@ -50,5 +50,3 @@ print("blocks:", len(blocks.index))
 print("min block-num:", blocks['Number'].min())
 print("max block-num:", blocks['Number'].max())
 print("num holes:", num_holes)
-
-#blocks.to_csv("TMP.csv", index=False, header=True)

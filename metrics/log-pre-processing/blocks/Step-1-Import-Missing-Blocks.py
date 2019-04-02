@@ -37,12 +37,12 @@ if os.path.isfile(BLOCKS_FINAL_LOG):
 local_blocks = pd.read_csv(LOCAL_BLOCKS, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'])
+    'CapturedLocally','BlockType','ForkLength'])
 
 remote_blocks = pd.read_csv(REMOTE_BLOCKS, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'])
+    'CapturedLocally','BlockType','ForkLength'])
 
 # na -> to True,   False remains False...
 local_blocks.CapturedLocally = local_blocks.CapturedLocally.fillna('True')

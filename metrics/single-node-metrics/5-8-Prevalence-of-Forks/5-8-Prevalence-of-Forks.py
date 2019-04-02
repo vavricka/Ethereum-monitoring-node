@@ -31,18 +31,19 @@ dtypes_blocks = {
         'ListOfUncles'  : 'object',
         'CapturedLocally'   : 'bool',
         'BlockType'         : 'object',
+        'ForkLength'         : 'int',
         }
 
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     dtype=dtypes_blocks)
 
 # 5.8 preval. of forks
 # 2 things, A and B:
 # A) number of: blocks  TOTAL BLOCKS,    Main /  Uncle (unrec) / Uncle (recognized)
-# B) distinguish between forks of various lengths.
+# B) forks of various lengths.
 
 total_blocks = len(blocks)
 print("Total Blocks: ", total_blocks)
@@ -65,56 +66,11 @@ print("Recognized Uncle:", num_rec_uncle, "rate:", num_rec_uncle / total_blocks)
 num_uncle = num_unrec_uncle + num_rec_uncle
 print("Uncle:", num_uncle, "rate:", num_uncle / total_blocks)
 
-
 print("Verifying Uncle+Main", num_main + num_uncle,
     "=?", len(blocks), "blocks")
 
-
-
 #B   forks and their lengths..
 uncles = blocks[(blocks.BlockType == "Uncle") | (blocks.BlockType == "Recognized")]
-
-uncles = uncles.assign(ForkLength = 0)  #0 means  NOT SET because the smallest fork-size is 1
-
-current_fork_length = 1
-
-#for each UNCLE
-for i, row in uncles.iterrows():
-
-    current_fork_length = 1
-
-    parentHash = row.ParentHash
-    
-    while True:
-
-        if blocks[blocks.BlockHash == parentHash].empty:
-            print("this uncle's parent isn't in our blocks")
-            print("thus we can't determine the length of this fork")
-            break
-        else:
-            curr_block = blocks[blocks.BlockHash == parentHash]
-            #Main?
-            if curr_block.BlockType.values[0] == "Main":
-                #reaching main... here the forks ends
-                #print("FORK LENGTH:", current_fork_length) #, "index:", i)
-
-                uncles.loc[i, 'ForkLength'] = current_fork_length
-                #print(uncles.loc[i])
-
-                break
-            else:
-                current_fork_length = current_fork_length + 1
-                parentHash = curr_block.ParentHash.values[0]
-
-
-
-
-print("fork not set:", len(uncles[uncles.ForkLength == 0]))
-if len(uncles[uncles.ForkLength == 0]) == 0:
-    print(".. as expected")
-    print(uncles[uncles.ForkLength == 0])
-else:
-    print("!!! that's bad - check them manually:")
 
 
 for x in range(1, 4):
@@ -125,4 +81,3 @@ for x in range(1, 4):
     #print(uncles[uncles.ForkLength == x])
 
 print("fork len >= 5:", len(uncles[uncles.ForkLength >= 5]))
-

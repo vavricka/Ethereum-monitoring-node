@@ -42,33 +42,34 @@ dtypes_blocks = {
         'ListOfUncles'  : 'object',
         'CapturedLocally'   : 'bool',
         'BlockType'         : 'object',
+        'ForkLength'    : 'int',
         }
 
 blocks_angainor = pd.read_csv(BLOCKS_ANGAINOR, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     usecols=['LocalTimeStamp','BlockHash','Number','CapturedLocally','BlockType'],
     dtype=dtypes_blocks)
 
 blocks_falcon = pd.read_csv(BLOCKS_FALCON, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     usecols=['LocalTimeStamp','BlockHash','Number','CapturedLocally','BlockType'],
     dtype=dtypes_blocks)
 
 blocks_s1_us = pd.read_csv(BLOCKS_S1_US, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     usecols=['LocalTimeStamp','BlockHash','Number','CapturedLocally','BlockType'],
     dtype=dtypes_blocks)
 
 blocks_s2_cn = pd.read_csv(BLOCKS_S2_CN, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     usecols=['LocalTimeStamp','BlockHash','Number','CapturedLocally','BlockType'],
     dtype=dtypes_blocks)
 
@@ -84,10 +85,6 @@ blocks_s1_us.reset_index(inplace=True, drop=True)
 
 blocks_s2_cn.sort_values(by=['BlockHash'], inplace=True)
 blocks_s2_cn.reset_index(inplace=True, drop=True)
-
-
-
-
 
 # drop where any ofthem has capturedlocally == false
 condition = blocks_angainor[ (blocks_angainor['CapturedLocally'] == False) | \
@@ -106,16 +103,12 @@ all_blocks = pd.concat([all_blocks, blocks_falcon[['LocalTimeStamp']] ], axis='c
 all_blocks = pd.concat([all_blocks, blocks_s1_us[['LocalTimeStamp']] ], axis='columns')
 all_blocks = pd.concat([all_blocks, blocks_s2_cn[['LocalTimeStamp']] ], axis='columns')
 
-
-
 #rename cols
 all_blocks.columns = ['BlockHash','Number','BlockType','AngainorTimeStamp','FalconTimeStamp','S1USTimeStamp','S2CNTimeStamp']
-
 
 #   add columns   (IN FOR LOOP..)
 all_blocks = all_blocks.assign(FirstObservation = np.nan, AngainorDiff = np.nan, \
     FalconDiff = np.nan, S1USDiff = np.nan, S2CNDiff = np.nan)
-
 
 for i in all_blocks.index:
     all_blocks.at[i, 'FirstObservation'] = min(pd.to_datetime(all_blocks.at[i,'AngainorTimeStamp']),\
@@ -129,7 +122,6 @@ for i in all_blocks.index:
 # would be better like this but   .total_seconds() makes trouble here
 #all_blocks = all_blocks.assign(AngainorMinusFalcon =     pd.to_datetime(all_blocks['AngainorTimeStamp']) - pd.to_datetime(all_blocks['FalconTimeStamp'])    )
 #all_blocks = all_blocks.assign(AngainorMinusFalcon = lambda x: pd.to_datetime(x.AngainorTimeStamp) - pd.to_datetime(x.FalconTimeStamp)    ) #.total_seconds()   
-
 
 
 all_blocks.sort_values(by=['Number'], inplace=True)

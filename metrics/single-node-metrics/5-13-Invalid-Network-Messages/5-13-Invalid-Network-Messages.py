@@ -1,21 +1,26 @@
 #!/usr/bin/python3
-
 import pandas as pd
+import numpy as np
+import sys
+import os
 
-PROJ_ROOT = "/Users/deus/Projects/Ethereum-monitoring-node/"
-LOGS_PATH = PROJ_ROOT + "raw-logs/csv/"
+if len(sys.argv) != 2:
+    sys.exit(sys.argv[0], ": expecting 1 parameter.")
 
-INVALID_MESSAGES_CSV = LOGS_PATH + "InvalidMessages.csv"
+LOG_FILE = sys.argv[1]      # "invalidmsgs.log"
 
-#read file into a DataFrame
-invMsgs = pd.read_csv(INVALID_MESSAGES_CSV, usecols=['MessageType','Cause'])   #skipping timestamp - no usage..
+if not os.path.isfile(LOG_FILE):
+    sys.exit(LOG_FILE, ": does not exists!")
 
-#PRINT total number of invalid messages per message type ,  
-print(invMsgs["MessageType"].value_counts())
-# get indexes
-#print(invMsgs["MessageType"].value_counts().index.tolist())
-# get values of occurrences
-#print(invMsgs["MessageType"].value_counts().values.tolist())
+dtypes = {
+    'LocalTimeStamp': 'object',
+    'MessageType'   : 'object',
+    'Cause'         : 'int',
+    }
+
+invMsgs = pd.read_csv(LOG_FILE, 
+    names=['LocalTimeStamp','MessageType','Cause'], 
+    usecols=['MessageType','Cause'], dtype=dtypes)
 
 #Per message type and cause.
 print(invMsgs["Cause"].value_counts())

@@ -15,12 +15,13 @@ from pathlib import Path
 #  Input: unique-unique-txs.log.FINAL unique-unique-txs.log.FINAL.OTHERMACHINE
 #  Output txs-stage-1.log
 
-if len(sys.argv) != 3:
-    sys.exit(sys.argv[0], ": expecting 2 parameters.")
+if len(sys.argv) != 4:
+    sys.exit(sys.argv[0], ": expecting 3 parameters.")
 
 #INPUT FILES
 LOCAL_TXS = sys.argv[1] #"unique-unique-txs.log.FINAL"
 REMOTE_TXS = sys.argv[2]
+OUT = sys.argv[3]
 
 if not os.path.isfile(LOCAL_TXS):
     sys.exit(LOCAL_TXS, ": does not exists!")
@@ -28,8 +29,8 @@ if not os.path.isfile(LOCAL_TXS):
 if not os.path.isfile(REMOTE_TXS):
     sys.exit(REMOTE_TXS, ": does not exists!")
 
-#output of this script
-TXS_FINAL_LOG = "txs-stage-1.log"
+if os.path.isfile(OUT):
+    sys.exit(OUT, ": already exists!")
 
 dtypes = {
         'LocalTimeStamp'    : 'object',
@@ -44,25 +45,40 @@ dtypes = {
         'To'                : 'object',
         'From'              : 'object',
         'ValidityErr'       : 'object',
+        'CapturedLocally'   : 'object',
+        'GasUsed'           : 'object',
+        'InMainBlock'       : 'object',
+        'InUncleBlocks'     : 'object',
+        'InOrder'           : 'object',
+        'NeverCommitting'    : 'object',
+        'CommitTime0'       : 'object',
+        'CommitTime3'       : 'object',
+        'CommitTime12'      : 'object',
+        'CommitTime36'      : 'object',
         }
 
-local_txs = pd.read_csv(LOCAL_TXS, 
-    names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
-   'Cost','Size','To','From','ValidityErr'], dtype=dtypes)
+local_txs = pd.read_csv(
+    LOCAL_TXS, 
+    names=[
+    'LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
+    'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
+    'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
+    'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
+    dtype=dtypes)
 
-remote_txs = pd.read_csv(REMOTE_TXS, 
-    names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
-   'Cost','Size','To','From','ValidityErr'], dtype=dtypes)
+remote_txs = pd.read_csv(
+    REMOTE_TXS, 
+    names=[
+    'LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
+    'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
+    'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
+    'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
+    dtype=dtypes)
 
-# add  columns to loc & all captLoc = True
-local_txs = local_txs.assign(CapturedLocally = True, GasUsed = np.nan, InMainBlock = np.nan,
-    InUncleBlocks = np.nan, InOrder = np.nan, NeverCommitting = np.nan, RemoteTimeStamp = np.nan,
-    CommitTime0 = np.nan, CommitTime3 = np.nan, CommitTime12 = np.nan, CommitTime36 = np.nan)
 
-# add  4 columns to loc & all captLoc = False
-remote_txs = remote_txs.assign(CapturedLocally = False, GasUsed = np.nan, InMainBlock = np.nan,
-    InUncleBlocks = np.nan, InOrder = np.nan, NeverCommitting = np.nan, RemoteTimeStamp = np.nan,
-    CommitTime0 = np.nan, CommitTime3 = np.nan, CommitTime12 = np.nan, CommitTime36 = np.nan)
+
+local_txs['CapturedLocally'] = 'True'
+remote_txs['CapturedLocally'] = 'False'
 
 #merge both together
 local_txs = local_txs.append(remote_txs, ignore_index=True)
@@ -78,4 +94,4 @@ local_txs.drop_duplicates(subset='Hash', keep='first', inplace=True)
 
 #out
 local_txs = local_txs.sort_values(by=['LocalTimeStamp'])
-local_txs.to_csv(TXS_FINAL_LOG, index=False, header=False)
+local_txs.to_csv(OUT, index=False, header=False)

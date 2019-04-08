@@ -40,25 +40,21 @@ dtypes = {
         'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
         'NeverCommitting'    : 'object',
-        'RemoteTimeStamp'   : 'object',
         'CommitTime0'       : 'float',
         'CommitTime3'       : 'float',
         'CommitTime12'      : 'float',
         'CommitTime36'      : 'float',
         }
 
-
 #load txs  ALL fields  #sort NOT
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
+            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             #usecols=['GasPrice','Hash','CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             usecols=['NeverCommitting','From','Nonce','InOrder','CommitTime12'],
             dtype=dtypes)
-
-
 
 
 def printMetric(txs):

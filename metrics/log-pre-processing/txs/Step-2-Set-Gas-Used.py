@@ -8,8 +8,8 @@ from pathlib import Path
 if len(sys.argv) != 3:
     sys.exit(sys.argv[0], ": expecting 2 parameters.")
 
-TXS_LOG = sys.argv[1] #txs-stage-2.log
-GAS_LOG = sys.argv[2] #txgasused.log.FINAL.REMOTE
+TXS_LOG = sys.argv[1] #txs-stage-1.log
+GAS_LOG = sys.argv[2] #txgasused.log.FINAL
 
 if not os.path.isfile(TXS_LOG):
     sys.exit(TXS_LOG, ": does not exists!")
@@ -18,7 +18,7 @@ if not os.path.isfile(GAS_LOG):
     sys.exit(GAS_LOG, ": does not exists!")
 
 #output of this script
-TXS_OUT="txs-stage-3.log" #txs with gasUsed set
+TXS_OUT="txs-stage-2.log" #txs with gasUsed set
 
 dtypes = {
         'LocalTimeStamp'    : 'object',
@@ -39,7 +39,6 @@ dtypes = {
         'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
         'NeverCommitting'    : 'object',
-        'RemoteTimeStamp'   : 'object',
         'CommitTime0'       : 'object',
         'CommitTime3'       : 'object',
         'CommitTime12'      : 'object',
@@ -57,7 +56,7 @@ dtypes_gas = {
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
+            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             index_col=False, dtype=dtypes)
 
@@ -81,20 +80,15 @@ for i in txs.index:
         try:
             #is it there? -> set GasUsed to TXS_LOG !
             if txHash == txsgas.at[line,'TxHash']:
-                if pd.isnull(txs.at[i,'GasUsed']):
-                    txs.at[i,'GasUsed'] = txsgas.at[line,'GasUsed']
-                elif txs.at[i,'GasUsed'] == txsgas.at[line,'GasUsed']:
-                    pass
-                else:
-                    #gausedLocal and gasusedRemote differ for the same txHash -
-                    print("!ACHTUNG!", txHash, "gasUsed:", txs.at[i,'GasUsed'], "gasUsed-new:",
-                        txsgas.at[line,'GasUsed'])
-                
+                #print(line, txHash, "in both")
+                txs.at[i,'GasUsed'] = txsgas.at[line,'GasUsed']
             #it is not there -> nothing to do here
             else:  
+                #print(line, txHash, "not in txgas->", txsgas.at[line,'TxHash'])
                 pass
         #it is not there -> nothing to do here
         except IndexError as e:
+            #print(line, txHash, "not in txgas + err", e)
             pass
 
 # export to new csv..

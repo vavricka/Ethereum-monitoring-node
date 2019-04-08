@@ -39,7 +39,6 @@ dtypes = {
         'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
         'NeverCommitting'    : 'object',
-        'RemoteTimeStamp'   : 'object',
         'CommitTime0'       : 'object',
         'CommitTime3'       : 'object',
         'CommitTime12'      : 'object',
@@ -49,27 +48,18 @@ dtypes = {
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
+            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             usecols=['LocalTimeStamp','Hash','ValidityErr','CapturedLocally'],
             dtype=dtypes)
-
-
-
-
-
 
 txs2 = pd.read_csv(TXS_2_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
+            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             usecols=['LocalTimeStamp','Hash','ValidityErr','CapturedLocally'],
             dtype=dtypes)
-
-
-
-
 
 
 # they both have the same number of txs ....    should sort  by hash   so indexes point to the same block

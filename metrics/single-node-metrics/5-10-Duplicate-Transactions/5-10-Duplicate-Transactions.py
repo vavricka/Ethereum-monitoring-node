@@ -32,7 +32,6 @@ dtypes = {
         'InUncleBlocks'     : 'object',
         'InOrder'           : 'object',
         'NeverCommitting'    : 'object',
-        'RemoteTimeStamp'   : 'object',
         'CommitTime0'       : 'float',
         'CommitTime3'       : 'float',
         'CommitTime12'      : 'float',
@@ -44,11 +43,10 @@ dtypes = {
 txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
-            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting','RemoteTimeStamp',
+            'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             usecols=['InMainBlock','InUncleBlocks'],
             dtype=dtypes)
-
 
 print( "num of txs total:")
 TXS_TOTAL = len(txs)

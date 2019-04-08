@@ -1,1 +1,1 @@
-LocalTimeStamp,Hash,GasLimit,GasPrice,Value,Nonce,MsgType,Cost,Size,To,From,ValidityErr,CapturedLocally,GasUsed,InMainBlock,InUncleBlocks,InOrder,NeverCommiting,RemoteTimeStamp,CommitTime0,CommitTime3,CommitTime12,CommitTime36
+LocalTimeStamp,Hash,GasLimit,GasPrice,Value,Nonce,MsgType,Cost,Size,To,From,ValidityErr,CapturedLocally,GasUsed,InMainBlock,InUncleBlocks,InOrder,NeverCommiting,CommitTime0,CommitTime3,CommitTime12,CommitTime36

@@ -55,17 +55,35 @@ blocks = pd.read_csv(BLOCKS_LOG,
 
 #NumTxsMinFromBoth: MIN number of txs from both NUMBER-OF-TXS-IN-UNCLE  and  NUMBER-OF-TXS-IN-CORRESPONDING-MAIN
 #ProportionOfTxsInBoth:   NumCommonTxs/NumTxsMinFromBoth
-blocks = blocks.assign(NumTxsMinFromBoth = 0, ProportionOfTxsInBoth = 0.0)
+blocks = blocks.assign(NumTxsMinFromBoth = 0, ProportionOfTxsInBoth = 0.0, ProportionToMain = 0.0, ProportionToUncle = 0.0)
 for i in blocks.index:
     blocks.at[i, 'NumTxsMinFromBoth'] = min (blocks.at[i, 'NumTxs'], blocks.at[i, 'NumTxsInCorrespondingMain'])
     
-    #proportion of txs in boty
+    #proportion of txs in both (PROPORTION to MIN from both)
     if blocks.at[i, 'NumTxsMinFromBoth'] == 0 & blocks.at[i, 'NumCommonTxs'] == 0:
         blocks.at[i, 'ProportionOfTxsInBoth'] = 1
     elif blocks.at[i, 'NumTxsMinFromBoth'] == 0:
         blocks.at[i, 'ProportionOfTxsInBoth'] = 0
     else:
         blocks.at[i, 'ProportionOfTxsInBoth'] =  blocks.at[i, 'NumCommonTxs']/blocks.at[i, 'NumTxsMinFromBoth'] 
+
+
+
+    if blocks.at[i, 'NumTxsInCorrespondingMain'] == 0 & blocks.at[i, 'NumCommonTxs'] == 0:
+        blocks.at[i, 'ProportionToMain'] = 1
+    elif blocks.at[i, 'NumTxsInCorrespondingMain'] == 0:
+        blocks.at[i, 'ProportionToMain'] = 0
+    else:
+        blocks.at[i, 'ProportionToMain'] =  blocks.at[i, 'NumCommonTxs']/blocks.at[i, 'NumTxsInCorrespondingMain'] 
+
+    if blocks.at[i, 'NumTxs'] == 0 & blocks.at[i, 'NumCommonTxs'] == 0:
+        blocks.at[i, 'ProportionToUncle'] = 1
+    elif blocks.at[i, 'NumTxs'] == 0:
+        blocks.at[i, 'ProportionToUncle'] = 0
+    else:
+        blocks.at[i, 'ProportionToUncle'] =  blocks.at[i, 'NumCommonTxs']/blocks.at[i, 'NumTxs'] 
+
+
 
 #print stats
 num_uncles_all = len(blocks)
@@ -79,6 +97,12 @@ print("median jaro (of common txs only): {0:.4f}".format(median_jaro_common_txs_
 
 median_proportion_of_common_txs = np.median(blocks['ProportionOfTxsInBoth'].values) 
 print("median proportion of common txs: {0:.4f}".format(median_proportion_of_common_txs) )
+
+median_proportion_of_common_txs_to_MAIN = np.median(blocks['ProportionToMain'].values) 
+print("median proportion of common txs to main: {0:.4f}".format(median_proportion_of_common_txs_to_MAIN) )
+
+median_proportion_of_common_txs_to_UNCLE = np.median(blocks['ProportionToUncle'].values) 
+print("median proportion of common txs to uncle: {0:.4f}".format(median_proportion_of_common_txs_to_UNCLE) )
 
 
 #PLOT graph

@@ -30,13 +30,14 @@ dtypes_blocks = {
         'ListOfTxs'     : 'object',
         'ListOfUncles'  : 'object',
         'CapturedLocally'   : 'bool',
-        'BlockType'         : 'object',
+        'BlockType'     : 'object',
+        'ForkLength'    : 'int',
         }
 
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     dtype=dtypes_blocks)
 
 print("Total Blocks: ", len(blocks), "(Local:",

@@ -40,20 +40,10 @@ do
         then
 
         #just tmp print
-        echo "$LOG_NAME.$((NUM)) tail: $(tail -n 1 $LOG_NAME.$NUM)"
-        echo "$NEXT_LOG head: $first_line"
+        #echo "$LOG_NAME.$((NUM)) tail: $(tail -n 1 $LOG_NAME.$NUM)"
+        #echo "$NEXT_LOG head: $first_line"
+        echo "$LOG_NAME.$((NUM)): appending $NEXT_LOG's head to it"
         #end tmp print
-
-        #do backup_files
-        if [ ! -f "$LOG_NAME.$NUM~Backup-Original" ] ; then
-            echo "creating backup $LOG_NAME.$NUM~Backup-Original"
-            cp "$LOG_NAME.$NUM" "$LOG_NAME.$NUM~Backup-Original"
-        fi
-        
-        if [ ! -f "$NEXT_LOG~Backup-Original" ] ; then
-            echo "creating backup $NEXT_LOG~Backup-Original"
-            cp "$NEXT_LOG" "$NEXT_LOG~Backup-Original"
-        fi
         
         #### delete the endline byte from the end of log
         #truncate -s -1 $LOG_NAME.$((NUM))
@@ -66,6 +56,8 @@ do
         elif [ "$(uname)" == "Linux" ]; then
             sed -i '1d' $NEXT_LOG
         fi
+    else
+          echo "$LOG_NAME.$((NUM)) is OK"
     fi
 
     if [ "$NEXT_LOG" = "$LOG_NAME" ]
@@ -75,3 +67,21 @@ do
 
     NUM=$((NUM+1))
 done
+
+
+#delete last line in last file if broken
+last_line=$(tail -n 1 $LOG_NAME)
+if [[ $last_line != 201* ]]
+    then
+    echo "$LOG_NAME deleting it's tail"
+    ####  delete last line
+    if [ "$(uname)" == "Darwin" ]; then
+        #sed -i "" '1d' $NEXT_LOG
+        sed -i '' -e '$ d' $NEXT_LOG
+    elif [ "$(uname)" == "Linux" ]; then
+        #sed -i '1d' $NEXT_LOG
+        sed -i '$ d' $NEXT_LOG
+    fi
+else
+    echo "$LOG_NAME is OK"
+fi

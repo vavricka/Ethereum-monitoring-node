@@ -16,10 +16,3 @@ if there are some leading lines starting with a different string
 
 (2) it is needed to fix it using the following command
 $bash repairLogs.sh <whatever.log> (txs.log / blocks.log / ... )
-
-(3) diff the repaired logs with the original files that have the
-~Backup-Original suffix
-
-(4) if all ok, delete *~Backup-Original files
-
-

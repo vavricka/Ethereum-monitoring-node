@@ -61,6 +61,7 @@ dtypes_blocks = {
         'ListOfUncles'  : 'object',
         'CapturedLocally'   : 'object',
         'BlockType'         : 'object',
+        'ForkLength'    : 'int',
         }
 
 txs = pd.read_csv(TXS_LOG,
@@ -73,7 +74,7 @@ txs = pd.read_csv(TXS_LOG,
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     usecols=['BlockHash','ListOfTxs','BlockType'],
     index_col='BlockHash', dtype=dtypes_blocks)
 
@@ -93,7 +94,7 @@ for i, row in blocks.iterrows():
     #SKIP BLOCKS WITH NO TXS
     if pd.isnull(row['ListOfTxs']):
         #tmp print
-        print(i, "zero txs")
+        #print(i, "zero txs")
         continue
 
     txs_in_block = row['ListOfTxs'].split(";")

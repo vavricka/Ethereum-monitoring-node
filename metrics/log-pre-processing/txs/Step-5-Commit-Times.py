@@ -56,6 +56,7 @@ dtypes_blocks = {
         'ListOfUncles'  : 'object',
         'CapturedLocally'   : 'object',# obj == str;  not bool! intentional
         'BlockType'         : 'object',
+        'ForkLength'    : 'int',
         }
 
 #load txs  ALL fields  #sort NOT
@@ -69,7 +70,7 @@ txs = pd.read_csv(TXS_LOG,
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['LocalTimeStamp','BlockHash','Number','GasLimit','GasUsed','Difficulty','Time',
     'Coinbase','ParentHash','UncleHash','BlockSize','ListOfTxs','ListOfUncles',
-    'CapturedLocally','BlockType'],
+    'CapturedLocally','BlockType','ForkLength'],
     dtype=dtypes_blocks,
     usecols=['LocalTimeStamp','BlockHash','Number','CapturedLocally','BlockType']
     )

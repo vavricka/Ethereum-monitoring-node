@@ -17,25 +17,38 @@ TXS_LOG = sys.argv[1] #"txs-propagation-times.log"
 if not os.path.isfile(TXS_LOG):
     sys.exit(TXS_LOG, ": does not exists!")
 
+##Hash,ValidityErr,AngainorTimeStamp,FalconTimeStamp,S1USTimeStamp,S2CNTimeStamp,
+##FirstObservation,AngainorDiff,FalconDiff,S1USDiff,S2CNDiff
 dtypes = {
-        'Hash'          : 'object',
-        'ValidityErr'   : 'object',
+        'Hash'              : 'object',
+        'ValidityErr'       : 'object',
         'AngainorTimeStamp' : 'object',
         'FalconTimeStamp'   : 'object',
-        'PositiveDif'       : 'float',
-        'AngainorMinusFalcon' : 'float',
+        'S1USTimeStamp'     : 'object',
+        'S2CNTimeStamp'     : 'object',
+        'FirstObservation'  : 'object',
+        'AngainorDiff'      : 'float',
+        'FalconDiff'        : 'float',
+        'S1USDiff'          : 'float',
+        'S2CNDiff'          : 'float',
         }
 
 txs = pd.read_csv(TXS_LOG, 
     names=['Hash','ValidityErr','AngainorTimeStamp','FalconTimeStamp',
-        'PositiveDif','AngainorMinusFalcon'],
+        'S1USTimeStamp','S2CNTimeStamp','FirstObservation','AngainorDiff',
+        'FalconDiff','S1USDiff','S2CNDiff'],
     dtype=dtypes)
 
 #basic info
 print(len(txs))
-print("delay AngainorMinusFalcon max:", txs['AngainorMinusFalcon'].max())
-print("delay AngainorMinusFalcon min:", txs['AngainorMinusFalcon'].min())
-print("delay PositiveDif max:", txs['PositiveDif'].max())
+print("delay AngainorDiff max:", txs['AngainorDiff'].max())
+print("delay AngainorDiff min:", txs['AngainorDiff'].min())
+print("delay FalconDiff max:", txs['FalconDiff'].max())
+print("delay FalconDiff min:", txs['FalconDiff'].min())
+print("delay S1USDiff max:", txs['S1USDiff'].max())
+print("delay S1USDiff min:", txs['S1USDiff'].min())
+print("delay S2CNDiff max:", txs['S2CNDiff'].max())
+print("delay S2CNDiff min:", txs['S2CNDiff'].min())
 
 ## this takes some time (it sorts...)
 #print(" mean", txs['PositiveDif'].mean(), "median", txs['PositiveDif'].median())
@@ -58,7 +71,12 @@ max_delay = 0.5 #txs['PositiveDif'].max()
 bin_seq = list(np.arange(0,max_delay,0.005))    # (0,  MAX PositiveDif,  step size) 
 
 fig, ax = plt.subplots()
-counts, bin_edges = np.histogram (txs['PositiveDif'], bins=bin_seq)
+
+
+series_all = pd.concat([txs['AngainorDiff'], txs['FalconDiff'],
+    txs['S1USDiff'],txs['S2CNDiff']], ignore_index=True)
+
+counts, bin_edges = np.histogram (series_all, bins=bin_seq)
 
 plt.xlabel('Time since first transaction observation [s]')
 

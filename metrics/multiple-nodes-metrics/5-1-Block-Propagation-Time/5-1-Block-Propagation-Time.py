@@ -36,73 +36,67 @@ blocks = pd.read_csv(BLOCKS_LOG,
     names=['BlockHash','Number','BlockType','AngainorTimeStamp','FalconTimeStamp',
         'S1USTimeStamp','S2CNTimeStamp','FirstObservation',
         'AngainorDiff','FalconDiff','S1USDiff','S2CNDiff'],
-    #usecols=['PositiveDif','AngainorMinusFalcon','FalconMinusAngainor'],
     dtype=dtypes_blocks)
 
-#basic info
-print(len(blocks))
-
-print("delay AngainorDiff max/min:", blocks['AngainorDiff'].max(), blocks['AngainorDiff'].min())
-print("delay FalconDiff max/min:", blocks['FalconDiff'].max(), blocks['FalconDiff'].min())
-print("delay S1USDiff max/min:", blocks['S1USDiff'].max(), blocks['S1USDiff'].min())
-print("delay S2CNDiff max/min:", blocks['S2CNDiff'].max(), blocks['S2CNDiff'].min())
-
-
-#novy srandy
-#all_blocks = all_blocks.assign(AngainorMinusFalcon = np.nan)
-#for i in all_blocks.index:
-#    all_blocks.at[i, 'AngainorMinusFalcon'] = (pd.to_datetime(all_blocks.at[i,'AngainorTimeStamp']) - pd.to_datetime(all_blocks.at[i,'FalconTimeStamp'])).total_seconds()
-
-
-
-## DROP blocks here
-
-# Drop  blocks received after network outage  BASED on   TIME range ..
-#blocks = all_blocks.assign(NeedDrop = np.nan)
-
-## loop through all blocks
-#for i in blocks.index:
-#    #CapturedLocally is False?
-#    if blocks.at[i,'PositiveDif'] >= 20:
-#        print(blocks.at[i,'Number'],blocks.at[i,'AngainorTimeStamp'], blocks.at[i,'PositiveDif'])
-    
-#NO dropping needed, so few missed blocks..
-
-
-bin_seq = list(np.arange(0,5,0.01))    # (0,  MAX PositiveDif,  step size) 
-
+bin_seq = list(np.arange(0,5,0.01))
 fig, ax = plt.subplots()
 
+#concat all propag delays as in Decker's work
 series_all = pd.concat([blocks['AngainorDiff'], blocks['FalconDiff'],
     blocks['S1USDiff'],blocks['S2CNDiff']], ignore_index=True)
 
-# just one server
+# just one server (just testing) e.g. test separately each server to see similarity
 #counts, bin_edges = np.histogram (blocks['AngainorDiff'], bins=bin_seq)
-# all together
+# all four servers (as in Decker's)
 counts, bin_edges = np.histogram (series_all, bins=bin_seq)
-
 plt.xlabel('Time since first block observation [s]')
+ax.bar (bin_edges[:-1], counts, width=0.009)
 
-ax.bar (bin_edges[:-1], counts, width=0.01)
+number_of_blocks = len(blocks) # per machine
+number_of_blocks_four_machines = number_of_blocks * 4
 
-number_of_blocks = len(blocks)
-#y_range = 20  # 5 means 1/5 -> 20%   , 20 means 100/20 -> 5%  of y line
-num_of_y_dots = 5 #  range 20 -> total = 0.05..   num_dots = 5 ...    0.05 /5 = 0.0§  one dot
+## uncomment the prints below when you need to know the percentages on Y-axis:
+#print("len counts:", len(counts))
+#print("counts>")
+#print(counts)
+#print("bin_edges>")
+#print(bin_edges)
+#print("num of blocks:", number_of_blocks, "blocks total (4 machines):", number_of_blocks_four_machines)
+#
+#print("CALCULATE PERCENTAGES FOR LABELING>")
+#print("counts.max()", counts.max())
+#print("percentages>")
+#print("counts.max()/number_of_blocks_four_machines",   counts.max()/number_of_blocks_four_machines)
+#print(" counts[4]/number_of_blocks_four_machines",    counts[4]/number_of_blocks_four_machines)
+#print(" counts[9]/number_of_blocks_four_machines",    counts[9]/number_of_blocks_four_machines)
+#print(" counts[16]/number_of_blocks_four_machines",    counts[16]/number_of_blocks_four_machines)
 
-print("counts",len(counts), type(counts), "max", counts.max(),counts.sum(),number_of_blocks )
-plt.yticks(np.arange(0, counts.max() + counts.max()/num_of_y_dots, counts.max()/num_of_y_dots ),['0','1%','2%','3%','12.92%','16.16%'])    #max tick
+##E.g. in our measurements (1.4. - 2.5.) we have got:
+#counts.max()/number_of_blocks_four_machines 0.29244668545824115
+#counts[4]/number_of_blocks_four_machines 0.05448667557581951
+#counts[9]/number_of_blocks_four_machines 0.04262776960481544
+#counts[16]/number_of_blocks_four_machines 0.014722562242411311
 
-#TODO y-ticks do better..
+# HERE - manually label y ticks according to the PERCENTAGES FOL LABELING OUTPUT
+plt.yticks([counts[16], counts[9], counts[4], counts.max()],['1.5%','4.3%','5.4%','29.2%'])
 
-
-plt.xscale('symlog')
+plt.xscale('linear')
 ax.set_xlim(left=0)
-ax.set_xlim(right=1)
+ax.set_xlim(right=0.5)
 
-nums = [0,0.2,0.5,1]
-labels = ['0','0.2','0.5','1']
-
+nums = [0,0.1,0.2,0.3,0.4,0.5]
+labels = ['0','0.1','0.2','0.3','0.4','0.5']
 plt.xticks(nums, labels)
+
+
+#  median and average propag delay
+np.sort(series_all)
+print("median", np.median(series_all))
+print("average", np.average(series_all))
+
+# delays for first 50%/ 90%, 95%,.... of all blocks.
+for q in [50, 90, 95, 98, 99, 100]:
+    print (":{}%% percentile: {}".format (q, np.percentile(series_all, q)))
 
 
 #LOCAL show

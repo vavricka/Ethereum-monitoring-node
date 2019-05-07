@@ -49,11 +49,19 @@ series_all = pd.concat([blocks['AngainorDiff'], blocks['FalconDiff'],
 #counts, bin_edges = np.histogram (blocks['AngainorDiff'], bins=bin_seq)
 # all four servers (as in Decker's)
 counts, bin_edges = np.histogram (series_all, bins=bin_seq)
+number_of_blocks = len(blocks) # per machine
+number_of_blocks_three_machines = number_of_blocks * 3
+
+# remove one whole machine from the bucket with zero delay
+# this is because this is the machine that captured the
+# message and so it does not count
+print("counts0", counts[0])
+counts[0] = counts[0] - number_of_blocks
+print("counts0", counts[0])
+
 plt.xlabel('Time since first block observation [s]')
 ax.bar (bin_edges[:-1], counts, width=0.009)
 
-number_of_blocks = len(blocks) # per machine
-number_of_blocks_four_machines = number_of_blocks * 4
 
 ## uncomment the prints below when you need to know the percentages on Y-axis:
 #print("len counts:", len(counts))
@@ -61,24 +69,43 @@ number_of_blocks_four_machines = number_of_blocks * 4
 #print(counts)
 #print("bin_edges>")
 #print(bin_edges)
-#print("num of blocks:", number_of_blocks, "blocks total (4 machines):", number_of_blocks_four_machines)
+#print("num of blocks:", number_of_blocks, "blocks total (3 machines):", number_of_blocks_three_machines)
 #
 #print("CALCULATE PERCENTAGES FOR LABELING>")
 #print("counts.max()", counts.max())
 #print("percentages>")
-#print("counts.max()/number_of_blocks_four_machines",   counts.max()/number_of_blocks_four_machines)
-#print(" counts[4]/number_of_blocks_four_machines",    counts[4]/number_of_blocks_four_machines)
-#print(" counts[9]/number_of_blocks_four_machines",    counts[9]/number_of_blocks_four_machines)
-#print(" counts[16]/number_of_blocks_four_machines",    counts[16]/number_of_blocks_four_machines)
+#print("counts.max()/number_of_blocks_three_machines",   counts.max()/number_of_blocks_three_machines)
+#print(" counts[4]/number_of_blocks_three_machines",    counts[4]/number_of_blocks_three_machines)
+#print(" counts[2]/number_of_blocks_three_machines",    counts[2]/number_of_blocks_three_machines)
+#print(" counts[0]/number_of_blocks_three_machines",    counts[0]/number_of_blocks_three_machines)
+#print(" counts[14]/number_of_blocks_three_machines",    counts[14]/number_of_blocks_three_machines)
+#print(" counts[18]/number_of_blocks_three_machines",    counts[18]/number_of_blocks_three_machines)
+#print(" counts[22]/number_of_blocks_three_machines",    counts[22]/number_of_blocks_three_machines)
+#print(" counts[21]/number_of_blocks_three_machines",    counts[21]/number_of_blocks_three_machines)
+#print(" counts[20]/number_of_blocks_three_machines",    counts[20]/number_of_blocks_three_machines)
+#print(" counts[17]/number_of_blocks_three_machines",    counts[17]/number_of_blocks_three_machines)
 
-##E.g. in our measurements (1.4. - 2.5.) we have got:
-#counts.max()/number_of_blocks_four_machines 0.29244668545824115
-#counts[4]/number_of_blocks_four_machines 0.05448667557581951
-#counts[9]/number_of_blocks_four_machines 0.04262776960481544
-#counts[16]/number_of_blocks_four_machines 0.014722562242411311
+#E.g. in our measurements (1.4. - 2.5.) we have got:
+#num of blocks: 178094 blocks total (4 machines): 534282
+#CALCULATE PERCENTAGES FOR LABELING>
+#counts.max() 38815
+#percentages>
+#counts.max()/number_of_blocks_three_machines 0.07264890076775934
+# counts[4]/number_of_blocks_three_machines 0.07264890076775934
+# counts[9]/number_of_blocks_three_machines 0.056837026139753916
+# counts[16]/number_of_blocks_three_machines 0.01963008298988175
+#median 0.05
+#average 0.08177188451042706
+#:50%% percentile: 0.05
+#:90%% percentile: 0.154
+#:95%% percentile: 0.19399999999999998
+#:98%% percentile: 0.248
+#:99%% percentile: 0.295
+#:100%% percentile: 673.7230000000001
 
 # HERE - manually label y ticks according to the PERCENTAGES FOL LABELING OUTPUT
-plt.yticks([counts[16], counts[9], counts[4], counts.max()],['1.5%','4.3%','5.4%','29.2%'])
+plt.yticks([counts[22],counts[18],counts[14], counts[0], counts[2] ,counts[4]],
+    ['0.7%','1.4%','2.9%','5.6%','6.6%','7.3%'])
 
 plt.xscale('linear')
 ax.set_xlim(left=0)

@@ -100,9 +100,9 @@ print("25 to 105:", len(s_txs25to105))
 print("105Gwei+:",  len(s_txs105up))
 
 
+max_delay = 200000
 
-
-bin_seq = list(range(0,10000,5))   #TODO increase for 1 month last. logs (10000 good for 4-days)
+bin_seq = list(range(0,max_delay,10))   #TODO increase for 1 month last. logs (10000 good for 4-days)
 fig, ax = plt.subplots()
 
 counts_txs0, bin_edges_txs0 = np.histogram (s_txs0, bins=bin_seq)
@@ -131,10 +131,10 @@ plt.yticks(np.arange(0, 1.1, step=0.1),['0%','10%','20%','30%','40%','50%','60%'
 #
 plt.xscale('symlog')
 ax.set_xlim(left=80)
-ax.set_xlim(right=10000)    #TODO increase for 1 month last. logs
+ax.set_xlim(right=max_delay)    #TODO increase for 1 month last. logs
 #
-nums = [80,100,1000,10000]  #TODO increase for 1 month last. logs
-labels = ['','100','1 000','10 000']   #TODO increase for 1 month last. logs
+nums = [80,100,1000,10000,100000,200000]  #TODO increase for 1 month last. logs
+labels = ['','100','1 000','10 000','100 000',' 200 000']   #TODO increase for 1 month last. logs
 
 plt.xticks(nums, labels)
 
@@ -145,7 +145,7 @@ def retrieve_name(var):
     return [var_name for var_name, var_val in callers_local_vars if var_val is var]
 
 for txtype in [s_txs0, s_txs0to20, s_txs20to25, s_txs25to105, s_txs105up]:
-    for q in [50, 90, 95, 100]:
+    for q in [50, 90, 95, 98, 99, 99.5, 100]:
         print (retrieve_name(txtype)[0], ":{}%% percentile: {}".format (q, np.percentile(txtype, q)))
 
 

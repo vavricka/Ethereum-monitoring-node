@@ -80,4 +80,4 @@ for x in range(1, 4):
     print("--")
     #print(uncles[uncles.ForkLength == x])
 
-print("fork len >= 5:", len(uncles[uncles.ForkLength >= 5]))
+print("fork len >= 4:", len(uncles[uncles.ForkLength >= 4]))

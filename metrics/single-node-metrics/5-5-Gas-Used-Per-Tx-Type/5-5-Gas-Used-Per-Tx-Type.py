@@ -49,7 +49,7 @@ txs = pd.read_csv(TXS_LOG,
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
             'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
-            usecols=['Hash', 'MsgType', 'ValidityErr', 'GasUsed'],
+            usecols=['Hash', 'MsgType', 'ValidityErr', 'GasUsed','NeverCommitting'],
             dtype=dtypes)
 
 # print  txs before drop
@@ -59,8 +59,8 @@ print("Txs TOTAL: ", len(txs.index))
 #print("txs['ValidityErr'] != nil:", sum(txs['ValidityErr'] != "nil"))
 #print( "gasused NULL  and valid != nil ",   len(  txs[  (txs['GasUsed'].isnull()) & (txs['ValidityErr'] != "nil") ]   )  )
 
-# drop txs w/ GasUsed nil, validityErr != nil
-condition = txs[  (txs['GasUsed'].isnull()) | (txs['ValidityErr'] != "nil") ].index
+# drop txs w/ GasUsed nil, validityErr != nil; committed txs only (these are surely valid)
+condition = txs[  (txs['GasUsed'].isnull()) | (txs['ValidityErr'] != "nil") | (txs['NeverCommitting'] != "Committed") ].index
 txs.drop(condition , inplace=True)
 
 # print  txs after drop
@@ -70,9 +70,9 @@ tx_only = txs[txs.MsgType == "TX"]
 mc_only = txs[txs.MsgType == "MC"]
 cc_only = txs[txs.MsgType == "CC"]
 
-#print ("TX:", len(tx_only), tx_only.GasUsed.min(),tx_only.GasUsed.max(),tx_only.GasUsed.median(),tx_only.GasUsed.mean() )   #min max median mean
-#print ("MC:", len(mc_only), mc_only.GasUsed.min(),mc_only.GasUsed.max(),mc_only.GasUsed.median(),mc_only.GasUsed.mean() )
-#print ("CC:", len(cc_only), cc_only.GasUsed.min(),cc_only.GasUsed.max(),cc_only.GasUsed.median(),cc_only.GasUsed.mean() )
+print ("TX:", len(tx_only), tx_only.GasUsed.min(),tx_only.GasUsed.max(),tx_only.GasUsed.median(),tx_only.GasUsed.mean() )   #min max median mean
+print ("MC:", len(mc_only), mc_only.GasUsed.min(),mc_only.GasUsed.max(),mc_only.GasUsed.median(),mc_only.GasUsed.mean() )
+print ("CC:", len(cc_only), cc_only.GasUsed.min(),cc_only.GasUsed.max(),cc_only.GasUsed.median(),cc_only.GasUsed.mean() )
 #
 #filtered_txs = tx_only[  tx_only['GasUsed'] >  21000 ]
 #print("TX and gasUsed > 21 000:", len(filtered_txs) ) 

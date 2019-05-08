@@ -53,66 +53,43 @@ txs = pd.read_csv(TXS_LOG,
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
             'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
             'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
-            usecols=['Hash','CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
+            usecols=['Hash','CommitTime0','CommitTime3','CommitTime12','CommitTime36','CapturedLocally'],
             dtype=dtypes)
+
+
+print("bef drop txs:", len(txs.index))
+# drop txs that were not capture locally  
+# leave only those that have all commitTimes set (i.e. drop the latest txs for which
+# we do not have blocks)
+# drop the txs from the beginning of measurement, for which we captured blocks before them
+# this drop is only cosmetical as it drops so few txs that the medians and even means change by 0.01s.
+condition = txs[   (txs['CapturedLocally'] != "True") | 
+    (txs['CommitTime0'].isnull()) | (txs['CommitTime36'].isnull()) |
+    (txs['CommitTime3'].isnull()) | (txs['CommitTime12'].isnull()) |
+    (txs['CommitTime0'] < 0) ].index
+
+
+txs.drop(condition , inplace=True)
 
 # first just basic...
 print("txs:", len(txs.index))
+
+
+
 print("min CommitTime0:", txs['CommitTime0'].min())
 print("max CommitTime0:", txs['CommitTime0'].max())
 
 print("   CommitTime0 median:", txs['CommitTime0'].median())
 print("   CommitTime0 mean:", txs['CommitTime0'].mean())
-print(" this is becasue maybe need drop veird vals.")
 
-print("min CommitTime3:", txs['CommitTime3'].min())
-print("max CommitTime3:", txs['CommitTime3'].max())
-print("min CommitTime12:", txs['CommitTime12'].min())
-print("max CommitTime12:", txs['CommitTime12'].max())
-print("min CommitTime36:", txs['CommitTime36'].min())
-print("max CommitTime36:", txs['CommitTime36'].max())
+print("   CommitTime3 median:", txs['CommitTime3'].median())
+print("   CommitTime3 mean:", txs['CommitTime3'].mean())
 
-# num of with val set (all 4 separately)
-print("txs w/ CommitTime0 set:", len(txs[    txs['CommitTime0'].notnull()       ]))   # try
-print("txs w/ CommitTime3 set:", len(txs[    txs['CommitTime3'].notnull()       ]))   # try
-print("txs w/ CommitTime12 set:", len(txs[    txs['CommitTime12'].notnull()       ]))   # try
-print("txs w/ CommitTime36 set:", len(txs[    txs['CommitTime36'].notnull()       ]))   # try
-#
-##num of with all 4 val set
-print("txs w/ all 4 commTimes set:", len(
-    txs[  
-    (txs['CommitTime0'].notnull()) &  (txs['CommitTime0'].notnull()) &
-    (txs['CommitTime0'].notnull()) & (txs['CommitTime0'].notnull()) 
-    ]
-    ))  
+print("   CommitTime12 median:", txs['CommitTime12'].median())
+print("   CommitTime12 mean:", txs['CommitTime12'].mean())
 
-
-# TMP  drop comm < 0     ;...hopefully not needed later.
-print("txs CommitTime0 < 0:", len(txs[txs.CommitTime0 <0]))
-txs = txs[txs.CommitTime0 > 0]
-print("txs CommitTime3 < 0:", len(txs[txs.CommitTime3 <0]))
-
-print("txs CommitTime12 < 0:", len(txs[txs.CommitTime12 <0]))
-
-print("txs CommitTime36 < 0:", len(txs[txs.CommitTime36 <0]))
-
-#TMP maybe uncomment  ..   filter  time>1000....
-#txs = txs[txs.CommitTime0 < 2900]
-
-print("txs CommitTime0 > 1000:", len(txs[txs.CommitTime0 > 1000]))
-print("txs CommitTime0 > 2000:", len(txs[txs.CommitTime0 > 2000]))
-print("txs CommitTime0 > 3000:", len(txs[txs.CommitTime0 > 3000]))
-
-
-print("txs:", len(txs.index))
-print("min CommitTime0:", txs['CommitTime0'].min())
-print("max CommitTime0:", txs['CommitTime0'].max())
-
-print("   CommitTime0 median:", txs['CommitTime0'].median())
-print("   CommitTime0 mean:", txs['CommitTime0'].mean())
-print("txs w/ CommitTime0 set:", len(txs[    txs['CommitTime0'].notnull()       ]))   # try
-
-
+print("   CommitTime36 median:", txs['CommitTime36'].median())
+print("   CommitTime36 mean:", txs['CommitTime36'].mean())
 
 
 
@@ -154,10 +131,17 @@ labels = ['0','100','200','300','400','500','600','700','800','900','1000']
 
 plt.xticks(nums, labels)
 #
-###  tmp
-#for q in [50, 90, 95, 100]:
-#    print ("reg tx  :{}%% percentile: {}".format (q, np.percentile(s_c0, q)))
-###end tmp
+for q in [50, 90, 95, 100]:
+    print ("c0  :{}%% percentile: {}".format (q, np.percentile(s_c0, q)))
+
+for q in [50, 90, 95, 100]:
+    print ("3  :{}%% percentile: {}".format (q, np.percentile(s_c3, q)))
+
+for q in [50, 90, 95, 100]:
+    print ("12  :{}%% percentile: {}".format (q, np.percentile(s_c12, q)))
+
+for q in [50, 90, 95, 100]:
+    print ("c36  :{}%% percentile: {}".format (q, np.percentile(s_c36, q)))
 #
 ax.legend()
 #

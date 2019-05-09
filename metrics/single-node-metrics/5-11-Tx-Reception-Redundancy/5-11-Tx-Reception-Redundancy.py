@@ -2,8 +2,18 @@
 import pandas as pd
 import numpy as np
 
-#TXS_LOG = "txs.log.FINAL"
-TXS_LOG = "txs.log.FINAL.28T00"
+
+import sys
+import os
+from pathlib import Path
+
+if len(sys.argv) != 2:
+    sys.exit(sys.argv[0], ": expecting 1 parameter.")
+
+TXS_LOG = sys.argv[1] #txs.log.FINAL.trimmed
+
+if not os.path.isfile(TXS_LOG):
+    sys.exit(TXS_LOG, ": does not exists!")
 
 
 dtypes = {
@@ -35,9 +45,13 @@ txs = pd.read_csv(TXS_LOG,
 
 vals = txs["Hash"].value_counts().values
 
+
 print("Average number of tx reception",  vals.mean()  )
 
 #print("occurenciesn",  pd.value_counts(vals)  )
 
 print("Median number of tx reception", np.median(vals)  )
 
+
+for q in [50, 90, 95, 98, 99, 100]:
+    print (":{}%% percentile: {}".format (q, np.percentile(vals, q)))

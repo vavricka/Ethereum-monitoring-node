@@ -2,8 +2,22 @@
 import pandas as pd
 import numpy as np
 
-BLOCKS_LOG =  "blocks.log.FINAL"
-ANNOUN_LOG = "blocksAnnouncements.log"
+
+
+import sys
+import os
+from pathlib import Path
+
+if len(sys.argv) != 3:
+    sys.exit(sys.argv[0], ": expecting 2 parameter.")
+
+BLOCKS_LOG = sys.argv[1] #"blocks.log.FINAL"
+ANNOUN_LOG = sys.argv[2] #"blocksAnnouncements.log"
+
+if not os.path.isfile(BLOCKS_LOG):
+    sys.exit(BLOCKS_LOG, ": does not exists!")
+if not os.path.isfile(ANNOUN_LOG):
+    sys.exit(ANNOUN_LOG, ": does not exists!")
 
 dtypes_blocks = {
         'LocalTimeStamp'    : 'object',
@@ -37,24 +51,26 @@ announ = pd.read_csv(ANNOUN_LOG,
 
 blck_total = blocks.append(announ)
 
-#computes how many times the same blockHash was received per msgType
-#msgType -- block received via NewBlockMsg or NewBlockHashesMsg or combined
-def print_info(msgType):
-    #occurencies = pd.value_counts(msgType.value_counts().values)
-    #for i, row in occurencies.iteritems():
-    #    print("In total", row, "blocks were received", i, "times")
-    print("Avg number of block reception", msgType['BlockHash'].value_counts().values.mean())
-    print("Median number of block reception", np.median(msgType['BlockHash'].value_counts().values)  )
+
 
 
 print("BLOCKS are propagated using 2 different message types",
 "NewBlockMsg and NewBlockHashesMsg.")
 
-print("####### blocks.log:")
-print_info(blocks)
 
-print("####### block announ:")
-print_info(announ)
+series_blocks = blocks['BlockHash'].value_counts().values
+series_announ = announ['BlockHash'].value_counts().values
+series_blck_total = blck_total['BlockHash'].value_counts().values
 
-print("####### blocks and block announ together:")
-print_info(blck_total)
+print("Avg number of block reception", blocks['BlockHash'].value_counts().values.mean())
+for q in [50, 90, 95, 98, 99, 100]:
+    print ("new block msgs:{}%% percentile: {}".format (q, np.percentile(series_blocks, q)))
+
+print("Avg number of announcements reception", announ['BlockHash'].value_counts().values.mean())
+for q in [50, 90, 95, 98, 99, 100]:
+    print ("announcements:{}%% percentile: {}".format (q, np.percentile(series_announ, q)))
+
+print("Avg number of blck_total reception", blck_total['BlockHash'].value_counts().values.mean())
+for q in [50, 90, 95, 98, 99, 100]:
+    print ("blocks and block announ together:{}%% percentile: {}"
+        .format (q, np.percentile(series_blck_total, q)))

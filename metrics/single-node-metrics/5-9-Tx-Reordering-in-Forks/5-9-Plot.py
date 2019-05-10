@@ -53,6 +53,12 @@ blocks = pd.read_csv(BLOCKS_LOG,
     dtype=dtypes_blocks)
 
 
+
+print( "forks total:", len(blocks))
+print( "forks with exactly the same tx ordering as main blocks:",
+    len(blocks[  blocks.JaroCommonTxsOnly == 1   ]  )   )
+
+
 #NumTxsMinFromBoth: MIN number of txs from both NUMBER-OF-TXS-IN-UNCLE  and  NUMBER-OF-TXS-IN-CORRESPONDING-MAIN
 #ProportionOfTxsInBoth:   NumCommonTxs/NumTxsMinFromBoth
 blocks = blocks.assign(NumTxsMinFromBoth = 0, ProportionOfTxsInBoth = 0.0, ProportionToMain = 0.0, ProportionToUncle = 0.0)
@@ -122,7 +128,7 @@ linetxs0to20, = ax.plot (bin_edges_jaro_common_txs[1:], cdf_jaro_common_txs/cdf_
 
 plt.yticks(np.arange(0, 1.1, step=0.1),['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'])
 #
-plt.xlabel('Jaro - normalized (0-1)')
+plt.xlabel('Jaro metric')
 plt.xscale('linear')
 ax.set_xlim(left=0)
 ax.set_xlim(right=1)

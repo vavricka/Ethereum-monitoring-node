@@ -134,7 +134,7 @@ ax.set_xlim(left=80)
 ax.set_xlim(right=max_delay)    #TODO increase for 1 month last. logs
 #
 nums = [80,100,1000,10000,100000,200000]  #TODO increase for 1 month last. logs
-labels = ['','100','1 000','10 000','100 000',' 200 000']   #TODO increase for 1 month last. logs
+labels = ['','100','1 000','10 000','1e5',' 2e5']   #TODO increase for 1 month last. logs
 
 plt.xticks(nums, labels)
 

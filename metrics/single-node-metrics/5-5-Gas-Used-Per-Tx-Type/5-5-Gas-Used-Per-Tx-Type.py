@@ -110,7 +110,7 @@ labels = ['21', '80', '160', '500', '1000', '2000', '4000', '8000']
 plt.xticks(nums, labels)
 
 ##  tmp
-for q in [50, 90, 95, 100]:
+for q in [50, 70, 75, 90, 95, 100]:
     print ("reg tx  :{}%% percentile: {}".format (q, np.percentile(s_tx, q)))
     print ("Msg call:{}%% percentile: {}".format (q, np.percentile(s_mc, q)))
     print ("con crea:{}%% percentile: {}".format (q, np.percentile(s_cc, q)))

@@ -1,0 +1,5 @@
+an unofficial (and not very complete) metric:
+
+which just prints delays between receptions o fthe same blocks on one node...
+
+this is probable the way how ethstats.net/.io measure propag delays.

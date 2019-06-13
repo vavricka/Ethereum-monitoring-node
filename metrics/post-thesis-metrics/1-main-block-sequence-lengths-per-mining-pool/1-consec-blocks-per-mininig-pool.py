@@ -4,6 +4,12 @@ import sys
 import os
 from pathlib import Path
 
+from numpy import ma
+from matplotlib import scale as mscale
+from matplotlib import transforms as mtransforms
+from matplotlib.ticker import FixedFormatter, FixedLocator
+
+
 #Set  True of False
 SAVE_TO_FILE = False
 
@@ -83,6 +89,66 @@ blocks.loc[blocks['Coinbase'] == "0x52E44f279f4203Dcf680395379E5F9990A69f13c", '
 blocks.loc[blocks['Coinbase'] == "0x6a7a43BE33ba930fE58F34E07D0ad6bA7ADB9B1F", 'MiningPool'] = "Coinotron"
 blocks.loc[blocks['Coinbase'] == "0x858fDEC2da9fA3CD3d97B8Bd1af98E9249D33613", 'MiningPool'] = "(0x858fDE..)"
 blocks.loc[blocks['Coinbase'] == "0x002e08000acbbaE2155Fab7AC01929564949070d", 'MiningPool'] = "2minerssolo"
+
+
+
+
+class CloseToOne(mscale.ScaleBase):
+    name = 'close_to_one'
+
+    def __init__(self, axis, **kwargs):
+        mscale.ScaleBase.__init__(self)
+        self.nines = kwargs.get('nines', 5)
+
+    def get_transform(self):
+        return self.Transform(self.nines)
+
+    def set_default_locators_and_formatters(self, axis):
+        axis.set_major_locator(FixedLocator(
+                np.array([1-10**(-k) for k in range(1+self.nines)])))
+        axis.set_major_formatter(FixedFormatter(
+                [str(1-10**(-k)) for k in range(1+self.nines)]))
+
+
+    def limit_range_for_scale(self, vmin, vmax, minpos):
+        return vmin, min(1 - 10**(-self.nines), vmax)
+
+    class Transform(mtransforms.Transform):
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self, nines):
+            mtransforms.Transform.__init__(self)
+            self.nines = nines
+
+        def transform_non_affine(self, a):
+            masked = ma.masked_where(a > 1-10**(-1-self.nines), a)
+            if masked.mask.any():
+                return -ma.log10(1-a)
+            else:
+                return -np.log10(1-a)
+
+        def inverted(self):
+            return CloseToOne.InvertedTransform(self.nines)
+
+    class InvertedTransform(mtransforms.Transform):
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self, nines):
+            mtransforms.Transform.__init__(self)
+            self.nines = nines
+
+        def transform_non_affine(self, a):
+            return 1. - 10**(-a)
+
+        def inverted(self):
+            return CloseToOne.Transform(self.nines)
+
+mscale.register_scale(CloseToOne)
+
 
 #  take only  MAIN blocks from now
 main_blocks = blocks[ blocks['BlockType'] == "Main" ]
@@ -235,20 +301,28 @@ def print_bar_graph(min_pools):
 
 def print_cdf(min_pools):
 
-
- 
     #TODO   all pools ...   or at least 8 biggest
     s_ethermine = []
     s_sparkpool = []
+    s_f2pool2 = []
+    s_Nanopool = []
+    s_miningpoolhub1 = []
 
     for i in range(1,10): # seq_1 to seq_9
         num = min_pools.at['Ethermine', 'seq_' + str(i)]
         s_ethermine.extend([i for j in range(num)])
 
-    for i in range(1,10):
         num = min_pools.at['Sparkpool', 'seq_' + str(i)]
         s_sparkpool.extend([i for j in range(num)])
 
+        num = min_pools.at['f2pool2', 'seq_' + str(i)]
+        s_f2pool2.extend([i for j in range(num)])
+
+        num = min_pools.at['Nanopool', 'seq_' + str(i)]
+        s_Nanopool.extend([i for j in range(num)])
+
+        num = min_pools.at['miningpoolhub1', 'seq_' + str(i)]
+        s_miningpoolhub1.extend([i for j in range(num)])
 
 
 
@@ -257,36 +331,49 @@ def print_cdf(min_pools):
 
     counts_ethermine, bin_edges_ethermine = np.histogram (s_ethermine, bins=bin_seq)
     cdf_ethermine = np.cumsum (counts_ethermine)
-    lineethermine, = ax.plot (bin_edges_ethermine[1:], cdf_ethermine/cdf_ethermine[-1],drawstyle='steps-pre', label='ethermine')
+    lineethermine, = ax.plot (bin_edges_ethermine[1:], cdf_ethermine/cdf_ethermine[-1] - 0.0001,drawstyle='steps-pre', label='ethermine', linestyle=':')
 
     counts_sparkpool, bin_edges_sparkpool = np.histogram (s_sparkpool, bins=bin_seq)
     cdf_sparkpool = np.cumsum (counts_sparkpool)
-    linesparkpool, = ax.plot (bin_edges_sparkpool[1:], cdf_sparkpool/cdf_sparkpool[-1],drawstyle='steps-pre', label='sparkpool')
+    linesparkpool, = ax.plot (bin_edges_sparkpool[1:], cdf_sparkpool/cdf_sparkpool[-1] - 0.0001,drawstyle='steps-pre', label='sparkpool', linestyle='--')
+    #linesparkpool, = ax.plot (bin_edges_sparkpool[1:], cdf_sparkpool/cdf_sparkpool[-1],drawstyle='steps-pre', label='sparkpool')
+
+    counts_f2pool2, bin_edges_f2pool2 = np.histogram (s_f2pool2, bins=bin_seq)
+    cdf_f2pool2 = np.cumsum (counts_f2pool2)
+    linef2pool2, = ax.plot (bin_edges_f2pool2[1:], cdf_f2pool2/cdf_f2pool2[-1] - 0.0001,drawstyle='steps-pre', label='f2pool2', linestyle='-.')
+
+    counts_Nanopool, bin_edges_Nanopool = np.histogram (s_Nanopool, bins=bin_seq)
+    cdf_Nanopool = np.cumsum (counts_Nanopool)
+    lineNanopool, = ax.plot (bin_edges_Nanopool[1:], cdf_Nanopool/cdf_Nanopool[-1] - 0.0001,drawstyle='steps-pre', label='Nanopool', linestyle='-')
+
+    counts_miningpoolhub1, bin_edges_miningpoolhub1 = np.histogram (s_miningpoolhub1, bins=bin_seq)
+    cdf_miningpoolhub1 = np.cumsum (counts_miningpoolhub1)
+    lineminingpoolhub1, = ax.plot (bin_edges_miningpoolhub1[1:], cdf_miningpoolhub1/cdf_miningpoolhub1[-1] - 0.0001,drawstyle='steps-pre', label='miningpoolhub1', linestyle='--')
+
 
     plt.xlabel('sequences of consecutive blocks from one miner of lengths 1 - 9')
-    plt.yticks(np.arange(0.5, 1.1, step=0.1),['50%','60%','70%','80%','90%','100%'])
-    
-    ax.set_ylim(bottom=0.5)
 
-    #plt.xscale('symlog')
+    #does not work thanks to  inverted log yaxis.
+    #plt.yticks(np.arange(0.5, 1.1, step=0.1),['50%','60%','70%','80%','90%','100%'])
+    
+    #enable if neede,   i think it looks ugly
+    # Don't allow the axis to be on top of your data
+    ax.set_axisbelow(True)
+
+    # Customize the grid
+    ax.grid(linestyle=':', linewidth='0.3')#, color='red')
+
+
     ax.set_xlim(left=0.8)
     ax.set_xlim(right=9)
-    
     nums = [1,2,3,4,5,6,7,8,9]
     labels = ['1','2','3','4','5','6','7','8','9']
 
     plt.xticks(nums, labels)
     
-    #for q in [50, 90, 95, 100]:
-    #    print ("ethermine  :{}%% percentile: {}".format (q, np.percentile(s_ethermine, q)))
-    #
-    #for q in [50, 90, 95, 100]:
-    #    print ("3  :{}%% percentile: {}".format (q, np.percentile(s_sparkpool, q)))
-
     ax.legend()
 
-    #plt.yscale('log')
-    #plt.gca().invert_yaxis()
+    plt.yscale('close_to_one', nines=4)
 
     
     if SAVE_TO_FILE:

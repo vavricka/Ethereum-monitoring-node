@@ -11,7 +11,7 @@ from matplotlib.ticker import FixedFormatter, FixedLocator
 
 
 #Set  True of False
-SAVE_TO_FILE = False
+SAVE_TO_FILE = True
 
 if SAVE_TO_FILE:
     print("SAVE TO FILE IS SET")
@@ -168,7 +168,7 @@ min_pools.set_index('Pool', inplace=True)
 min_pools = min_pools.assign(count = counts_of_blcks_per_pool, countVStotal = np.nan, SameMinSeq = 0,
     seqVScount = np.nan, col_2_4_corel = np.nan,
     seq_1 = 0, seq_2 = 0, seq_3 = 0, seq_4 = 0, seq_5 = 0,
-    seq_6 = 0, seq_7 = 0, seq_8 = 0, seq_9 = 0, seq_over_9 = 0)
+    seq_6 = 0, seq_7 = 0, seq_8 = 0, seq_9 = 0, seq_10 = 0)   #seq_10 means anything over 9,. e.g. 10,11,12..
 
 for i in min_pools.index:
     min_pools.at[i, 'countVStotal'] = min_pools.at[i, 'count'] / len_man_blocks
@@ -220,7 +220,7 @@ for i in main_blocks.index:
             main_blocks.at[i-1, 'Number'])
 
         elif cur_seq > 9:
-            min_pools.at[prevMiner, 'seq_over_9'] = min_pools.at[prevMiner, 'seq_over_9'] + 1
+            min_pools.at[prevMiner, 'seq_10'] = min_pools.at[prevMiner, 'seq_10'] + 1  #seq_10 means anything over 9,. e.g. 10,11,12..
 
         cur_seq = 1
 
@@ -307,8 +307,10 @@ def print_cdf(min_pools):
     s_f2pool2 = []
     s_Nanopool = []
     s_miningpoolhub1 = []
+    s_pandapool = []
 
-    for i in range(1,10): # seq_1 to seq_9
+
+    for i in range(1,11): # seq_1 to seq_10
         num = min_pools.at['Ethermine', 'seq_' + str(i)]
         s_ethermine.extend([i for j in range(num)])
 
@@ -324,34 +326,51 @@ def print_cdf(min_pools):
         num = min_pools.at['miningpoolhub1', 'seq_' + str(i)]
         s_miningpoolhub1.extend([i for j in range(num)])
 
+        num = min_pools.at['pandapool', 'seq_' + str(i)]
+        s_pandapool.extend([i for j in range(num)])
 
 
-    bin_seq = list(range(0,10,1))
+    bin_seq = list(range(0,11,1))
     fig, ax = plt.subplots()
 
     counts_ethermine, bin_edges_ethermine = np.histogram (s_ethermine, bins=bin_seq)
     cdf_ethermine = np.cumsum (counts_ethermine)
-    lineethermine, = ax.plot (bin_edges_ethermine[1:], cdf_ethermine/cdf_ethermine[-1] - 0.0001,drawstyle='steps-pre', label='ethermine', linestyle=':')
+    #convert all Y==1 to Y=0.9999 because of plot
+    yaxis = [0.99999 if x == 1 else x for x in cdf_ethermine/cdf_ethermine[-1]]
+    lineethermine, = ax.plot (bin_edges_ethermine[1:], yaxis,drawstyle='steps-pre', label='Ethermine', linestyle=':')
 
     counts_sparkpool, bin_edges_sparkpool = np.histogram (s_sparkpool, bins=bin_seq)
     cdf_sparkpool = np.cumsum (counts_sparkpool)
-    linesparkpool, = ax.plot (bin_edges_sparkpool[1:], cdf_sparkpool/cdf_sparkpool[-1] - 0.0001,drawstyle='steps-pre', label='sparkpool', linestyle='--')
-    #linesparkpool, = ax.plot (bin_edges_sparkpool[1:], cdf_sparkpool/cdf_sparkpool[-1],drawstyle='steps-pre', label='sparkpool')
+    #convert all Y==1 to Y=0.9999 because of plot
+    yaxis = [0.99999 if x == 1 else x for x in cdf_sparkpool/cdf_sparkpool[-1]]
+    linesparkpool, = ax.plot (bin_edges_sparkpool[1:], yaxis,drawstyle='steps-pre', label='Sparkpool', linestyle='--')
 
     counts_f2pool2, bin_edges_f2pool2 = np.histogram (s_f2pool2, bins=bin_seq)
     cdf_f2pool2 = np.cumsum (counts_f2pool2)
-    linef2pool2, = ax.plot (bin_edges_f2pool2[1:], cdf_f2pool2/cdf_f2pool2[-1] - 0.0001,drawstyle='steps-pre', label='f2pool2', linestyle='-.')
+    yaxis = [0.99999 if x == 1 else x for x in cdf_f2pool2/cdf_f2pool2[-1]]
+    linef2pool2, = ax.plot (bin_edges_f2pool2[1:], yaxis,drawstyle='steps-pre', label='F2pool2', linestyle='-.')
 
     counts_Nanopool, bin_edges_Nanopool = np.histogram (s_Nanopool, bins=bin_seq)
     cdf_Nanopool = np.cumsum (counts_Nanopool)
-    lineNanopool, = ax.plot (bin_edges_Nanopool[1:], cdf_Nanopool/cdf_Nanopool[-1] - 0.0001,drawstyle='steps-pre', label='Nanopool', linestyle='-')
+    yaxis = [0.99999 if x == 1 else x for x in cdf_Nanopool/cdf_Nanopool[-1]]
+    lineNanopool, = ax.plot (bin_edges_Nanopool[1:], yaxis,drawstyle='steps-pre', label='Nanopool', linestyle='-')
 
     counts_miningpoolhub1, bin_edges_miningpoolhub1 = np.histogram (s_miningpoolhub1, bins=bin_seq)
     cdf_miningpoolhub1 = np.cumsum (counts_miningpoolhub1)
-    lineminingpoolhub1, = ax.plot (bin_edges_miningpoolhub1[1:], cdf_miningpoolhub1/cdf_miningpoolhub1[-1] - 0.0001,drawstyle='steps-pre', label='miningpoolhub1', linestyle='--')
+    yaxis = [0.99999 if x == 1 else x for x in cdf_miningpoolhub1/cdf_miningpoolhub1[-1]]
+    lineminingpoolhub1, = ax.plot (bin_edges_miningpoolhub1[1:], yaxis,drawstyle='steps-pre', label='Miningpoolhub1', linestyle=':')
+
+    counts_pandapool, bin_edges_pandapool = np.histogram (s_pandapool, bins=bin_seq)
+    cdf_pandapool = np.cumsum (counts_pandapool)
+    yaxis = [0.99999 if x == 1 else x for x in cdf_pandapool/cdf_pandapool[-1]]
+    linepandapool, = ax.plot (bin_edges_pandapool[1:], yaxis,drawstyle='steps-pre', label='Pandapool', linestyle='--')
 
 
-    plt.xlabel('sequences of consecutive blocks from one miner of lengths 1 - 9')
+    plt.xlabel('Mainchain block sequence length')
+
+    plt.ylabel('CDF')
+
+    #plt.title("Distribution of main block sequences generated by an unique miner")
 
     #does not work thanks to  inverted log yaxis.
     #plt.yticks(np.arange(0.5, 1.1, step=0.1),['50%','60%','70%','80%','90%','100%'])
@@ -365,15 +384,17 @@ def print_cdf(min_pools):
 
 
     ax.set_xlim(left=0.8)
-    ax.set_xlim(right=9)
-    nums = [1,2,3,4,5,6,7,8,9]
-    labels = ['1','2','3','4','5','6','7','8','9']
+    ax.set_xlim(right=10)
+    nums = [1,2,3,4,5,6,7,8,9,10]
+    labels = ['1','2','3','4','5','6','7','8','9','9+']
 
     plt.xticks(nums, labels)
     
     ax.legend()
 
-    plt.yscale('close_to_one', nines=4)
+
+    plt.yscale('close_to_one', nines=5)
+    
 
     
     if SAVE_TO_FILE:

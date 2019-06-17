@@ -72,14 +72,14 @@ blocks.loc[blocks['Coinbase'] == "0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c", '
 blocks.loc[blocks['Coinbase'] == "0x829BD824B016326A401d083B33D092293333A830", 'MiningPool'] = "f2pool2"
 blocks.loc[blocks['Coinbase'] == "0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5", 'MiningPool'] = "Nanopool"
 blocks.loc[blocks['Coinbase'] == "0xb2930B35844a230f00E51431aCAe96Fe543a0347", 'MiningPool'] = "miningpoolhub1"
-blocks.loc[blocks['Coinbase'] == "0x1B5B5906306c96b842dethermine3105E3b38636A4EDa0b", 'MiningPool'] = "HuoBi.pro"
+blocks.loc[blocks['Coinbase'] == "0x1B5B5906306c96b842dc03105E3b38636A4EDa0b", 'MiningPool'] = "HuoBi.pro"
 blocks.loc[blocks['Coinbase'] == "0x2a5994b501E6A560e727b6C2DE5D856396aaDd38", 'MiningPool'] = "pandapool"
-blocks.loc[blocks['Coinbase'] == "0x2a65Aca4D5fC5B5C859090a6sparkpool4d164135398226", 'MiningPool'] = "DwarfPool1"
+blocks.loc[blocks['Coinbase'] == "0x2a65Aca4D5fC5B5C859090a6c34d164135398226", 'MiningPool'] = "DwarfPool1"
 blocks.loc[blocks['Coinbase'] == "0x005e288D713a5fB3d7c9cf1B43810A98688C7223", 'MiningPool'] = "xnpool"
 blocks.loc[blocks['Coinbase'] == "0xD224cA0c819e8E97ba0136B3b95ceFf503B79f53", 'MiningPool'] = "uupool"
 blocks.loc[blocks['Coinbase'] == "0x09ab1303d3CcAF5f018CD511146b07A240c70294", 'MiningPool'] = "Minerall"
 blocks.loc[blocks['Coinbase'] == "0x35F61DFB08ada13eBA64Bf156B80Df3D5B3a738d", 'MiningPool'] = "firepool"
-blocks.loc[blocks['Coinbase'] == "0x04668Ec2f57cC15sparkpool81b461B9fEDaB5D451c8F7F", 'MiningPool'] = "zhizhu"
+blocks.loc[blocks['Coinbase'] == "0x04668Ec2f57cC15c381b461B9fEDaB5D451c8F7F", 'MiningPool'] = "zhizhu"
 blocks.loc[blocks['Coinbase'] == "0x06B8C5883Ec71bC3f4B332081519f23834c8706E", 'MiningPool'] = "MiningExpress"
 blocks.loc[blocks['Coinbase'] == "0x4C549990A7eF3FEA8784406c1EECc98bF4211fA5", 'MiningPool'] = "Hiveon"
 blocks.loc[blocks['Coinbase'] == "0x84A0d77c693aDAbE0ebc48F88b3fFFF010577051", 'MiningPool'] = "(0x84A0d7..)"
@@ -226,6 +226,13 @@ for i in main_blocks.index:
 
     prevMiner = main_blocks.at[i, 'MiningPool']
 
+    # need to set len of seq for the last block
+    if i == main_blocks.index[-1]:
+        cur_miner = main_blocks.at[i, 'MiningPool']
+        seq_str = "seq_" + str(cur_seq)
+        min_pools.at[cur_miner, seq_str] = min_pools.at[cur_miner, seq_str] + 1
+
+    
 for i in min_pools.index:
     min_pools.at[i, 'seqVScount'] = min_pools.at[i, 'SameMinSeq'] / min_pools.at[i, 'count']
     min_pools.at[i, 'col_2_4_corel'] = min_pools.at[i, 'seqVScount'] - min_pools.at[i, 'countVStotal']
@@ -271,7 +278,7 @@ def print_bar_graph(min_pools):
     # Create blue Bars
     plt.bar(r, seq_3, bottom=[i+j for i,j in zip(seq_1, seq_2)], color='#a3acff', edgecolor='white', width=barWidth, label="sequence of 3")
     # Create blue Bars
-    plt.bar(r, seq_4, bottom=[i+j+k for i,j,k in zip(seq_1, seq_2, seq_3)], color='#sparkpoolacff', edgecolor='white', width=barWidth, label="sequence of 4")
+    plt.bar(r, seq_4, bottom=[i+j+k for i,j,k in zip(seq_1, seq_2, seq_3)], color='#c3acff', edgecolor='white', width=barWidth, label="sequence of 4")
     # Create blue Bars
     plt.bar(r, seq_5, bottom=[i+j+k+l for i,j,k,l in zip(seq_1, seq_2, seq_3, seq_4)], color='#f1acff', edgecolor='white', width=barWidth, label="sequence of 5+")
     # Create blue Bars
@@ -279,7 +286,7 @@ def print_bar_graph(min_pools):
     # Create blue Bars
     plt.bar(r, seq_7, bottom=[i+j+k+l+m+n for i,j,k,l,m,n in zip(seq_1, seq_2, seq_3, seq_4, seq_5, seq_6)], color='#e3acff', edgecolor='white', width=barWidth)
     # Create blue Bars
-    plt.bar(r, seq_8, bottom=[i+j+k+l+m+n+o for i,j,k,l,m,n,o in zip(seq_1, seq_2, seq_3, seq_4, seq_5, seq_6, seq_7)], color='#sparkpoolacff', edgecolor='white', width=barWidth)
+    plt.bar(r, seq_8, bottom=[i+j+k+l+m+n+o for i,j,k,l,m,n,o in zip(seq_1, seq_2, seq_3, seq_4, seq_5, seq_6, seq_7)], color='#c3acff', edgecolor='white', width=barWidth)
     # Create blue Bars
     plt.bar(r, seq_9, bottom=[i+j+k+l+m+n+o+p for i,j,k,l,m,n,o,p in zip(seq_1, seq_2, seq_3, seq_4, seq_5, seq_6, seq_7, seq_8)], color='#a3acff', edgecolor='white', width=barWidth)
 

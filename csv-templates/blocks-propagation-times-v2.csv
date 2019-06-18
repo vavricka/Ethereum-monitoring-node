@@ -1,1 +1,1 @@
-BlockHash,Number,BlockType,AngainorTimeStamp,FalconTimeStamp,S1USTimeStamp,S2CNTimeStamp,FirstObservation,AngainorDiff,FalconDiff,S1USDiff,S2CNDiff,MiningPool,EmptyBlock,NumTransactions,SameMinerSeqLen,Difficulty
+BlockHash,Number,BlockType,AngainorTimeStamp,FalconTimeStamp,S1USTimeStamp,S2CNTimeStamp,FirstObservation,AngainorDiff,FalconDiff,S1USDiff,S2CNDiff,MiningPool,NumTransactions,SameMinerSeqLen,PositionInsideSeq,Difficulty,BlockSize

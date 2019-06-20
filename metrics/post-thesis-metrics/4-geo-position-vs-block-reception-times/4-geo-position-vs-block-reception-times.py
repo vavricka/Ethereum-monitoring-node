@@ -11,15 +11,15 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 if len(sys.argv) != 2:
-    sys.exit(sys.argv[0], ": expecting 1 parameter - blocks-propagation-times.log.")
+    sys.exit(sys.argv[0], ": expecting 1 parameter - blocks-propagation-times-v3.log.")
 
-BLOCKS_LOG = sys.argv[1] #"blocks-propagation-times.log"
+BLOCKS_LOG = sys.argv[1] 
 if not os.path.isfile(BLOCKS_LOG):
     sys.exit(BLOCKS_LOG, ": does not exists!")
 
-dtypes_blocks = {
+dtypes_blocks_propag_times_v3 = {
         'BlockHash'         : 'object',
-        'Number'            : 'object',
+        'Number'            : 'Int64',
         'BlockType'         : 'object',
         'AngainorTimeStamp' : 'object',
         'FalconTimeStamp'   : 'object',
@@ -30,17 +30,29 @@ dtypes_blocks = {
         'FalconDiff'        : 'float',
         'S1USDiff'          : 'float',
         'S2CNDiff'          : 'float',
+        'MiningPool'        : 'object',
+        'NumTransactions'   : 'Int64',
+        'SameMinerSeqLen'   : 'Int64',
+        'PositionInsideSeq' : 'Int64',
+        'Difficulty'        : 'Int64',   
+        'BlockSize'         : 'Int64',
+        'InterblockTime'    : 'float',   
+        'InterblockTimePerPool' : 'float',
         }
 
+#load blocks
 blocks = pd.read_csv(BLOCKS_LOG, 
     names=['BlockHash','Number','BlockType','AngainorTimeStamp','FalconTimeStamp',
         'S1USTimeStamp','S2CNTimeStamp','FirstObservation',
-        'AngainorDiff','FalconDiff','S1USDiff','S2CNDiff'],
-    dtype=dtypes_blocks)
-
+        'AngainorDiff','FalconDiff','S1USDiff','S2CNDiff',
+        'MiningPool','NumTransactions','SameMinerSeqLen','PositionInsideSeq',
+        'Difficulty','BlockSize','InterblockTime','InterblockTimePerPool'],
+    dtype=dtypes_blocks_propag_times_v3)
 
 
 first_receptions_per_instance = []
+first_receptions_per_instance_10ms = [] # 90% of ntp has tolerance under 10ms
+
 num_blocks = len(blocks)
 
 first_receptions_sum = 0
@@ -50,6 +62,8 @@ for i in ['AngainorDiff', 'FalconDiff', 'S1USDiff', 'S2CNDiff']:
     first_receptions = len(blocks[(blocks[i] == 0 )])
     print("first receptions:", first_receptions, round(first_receptions/num_blocks*100,2), " %", i)
     first_receptions_per_instance.append(len( blocks[  (blocks[i] == 0 ) ] ))
+    first_receptions_per_instance_10ms.append(len( blocks[ (blocks[i] > 0 ) & (blocks[i] <= 0.01 ) ] ))
+
     first_receptions_sum = first_receptions_sum + first_receptions
     
 print("blocks:", len(blocks))
@@ -59,7 +73,7 @@ print("first receptions:", first_receptions_sum,
 x = ['Portugal', 'Czechia', 'USA - East', 'Taiwan']
 
 x_pos = [i for i, _ in enumerate(x)]
-bar1 = plt.barh(x_pos, first_receptions_per_instance, color='blue')
+bar1 = plt.barh(x_pos, first_receptions_per_instance, color='blue')#, xerr=first_receptions_per_instance_10ms, uplims=True )
 
 plt.ylabel("Instances")
 plt.xlabel("First receptions of blocks per Ethereum instance")
@@ -75,9 +89,6 @@ plt.xticks(nums, labels)
 #plt.show()
 #save to file
 plt.savefig('ptm-4-geo-position-vs-block-observ-time.pdf', bbox_inches="tight")
-
-
-
 
 
 

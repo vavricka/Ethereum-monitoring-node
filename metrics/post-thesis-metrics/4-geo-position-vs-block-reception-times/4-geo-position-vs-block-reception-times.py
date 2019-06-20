@@ -49,7 +49,6 @@ blocks = pd.read_csv(BLOCKS_LOG,
         'Difficulty','BlockSize','InterblockTime','InterblockTimePerPool'],
     dtype=dtypes_blocks_propag_times_v3)
 
-
 first_receptions_per_instance = []
 first_receptions_per_instance_10ms = [] # 90% of ntp has tolerance under 10ms
 
@@ -73,10 +72,11 @@ print("first receptions:", first_receptions_sum,
 x = ['Portugal', 'Czechia', 'USA - East', 'Taiwan']
 
 x_pos = [i for i, _ in enumerate(x)]
-bar1 = plt.barh(x_pos, first_receptions_per_instance, color='blue')#, xerr=first_receptions_per_instance_10ms, uplims=True )
+bar1 = plt.barh(x_pos, first_receptions_per_instance, color='blue', xerr=[(0,0,0,0),first_receptions_per_instance_10ms])
 
 plt.ylabel("Instances")
-plt.xlabel("First receptions of blocks per Ethereum instance")
+plt.xlabel("First receptions of blocks per Ethereum instance\n\
+    (NTP in 90% of cases has offset under 10ms - these are shown in the error bars)")
 plt.title("Influence of geographical position on faster new block observation")
 
 plt.yticks(x_pos, x)
@@ -88,7 +88,4 @@ plt.xticks(nums, labels)
 
 #plt.show()
 #save to file
-plt.savefig('ptm-4-geo-position-vs-block-observ-time.pdf', bbox_inches="tight")
-
-
-
+plt.savefig('ptm-4-geo-position-vs-block-observ-time-wth-error-bars-10ms.pdf', bbox_inches="tight")

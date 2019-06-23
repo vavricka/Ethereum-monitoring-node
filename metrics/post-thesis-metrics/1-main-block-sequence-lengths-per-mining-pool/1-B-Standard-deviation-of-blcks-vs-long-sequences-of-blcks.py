@@ -46,46 +46,95 @@ block_propag_times = pd.read_csv(BLOCKS_LOG,
     dtype=dtypes_blocks_propag_times_v3)
 
 
+#  crate a data framame   with  one min. pool  for each row
+#sequences_list = block_propag_times['SameMinerSeqLen'].unique() 
+sequences_list = list(range(0,10))  #  0  means overall
+sequences = pd.DataFrame(sequences_list, columns =['SeqLen'])
+sequences.set_index('SeqLen', inplace=True)
+
+sequences = sequences.assign(mean = np.nan, median = np.nan, std = np.nan,
+    based_on_num_of_blocks = np.nan)
 
 
 
+for i in range(0,10):
 
-
-## calculate  avg   and   median
-vals = block_propag_times["InterblockTime"]
-print("seq. lengths: (all)", "(based on data from", sum(~np.isnan(vals)), "blocks)")
-print("                 Average interblock time",  np.nanmean(vals)  )
-print("                 Median interblock      ", np.nanmedian(vals)  )
-print("---------")
-
-vals = block_propag_times["InterblockTimePerPool"]
-print("seq. lengths: (all)", "(based on data from", sum(~np.isnan(vals)), "blocks)")
-print("                 Average interblock time per pool",  np.nanmean(vals)  )
-print("                 Median interblock time per pool ", np.nanmedian(vals)  )
-print("---------")
-
-
-for i in range(1,10):
-    block_propag_times_tmp = block_propag_times[block_propag_times.SameMinerSeqLen == i]
+    if i == 0:
+        block_propag_times_tmp = block_propag_times
+    else:
+        block_propag_times_tmp = block_propag_times[block_propag_times.SameMinerSeqLen == i]
+        
     vals = block_propag_times_tmp["InterblockTimePerPool"]#.value_counts().values
-    print("seq. length:",i, "(based on data from", sum(~np.isnan(vals)), "blocks)")
-    print("                 Average interblock time per pool",  np.nanmean(vals)  )
-    print("                 Median interblock time per pool ", np.nanmedian(vals)  )
-    print("---------")
+
+    sequences.at[i, 'mean']   = np.nanmean(vals)
+    sequences.at[i, 'median'] = np.nanmedian(vals)
+    sequences.at[i, 'std']    = np.std(vals)
+    sequences.at[i, 'based_on_num_of_blocks'] = sum(~np.isnan(vals))
+    
+
+#float to int
+sequences['based_on_num_of_blocks'] = sequences['based_on_num_of_blocks'].astype('Int32')
+
+
+#PRINT
+print("0 means ALL sequences together.")
+print(sequences)
 
 
 
-print("block whitdrawing?")
-#  for each  seq_len 1-10  check the delay between the first
-#  blck from the sequence and the main block before ...  to see if they withdrawed or not.
-for i in range(1,10):
-    block_propag_times_tmp = block_propag_times[(block_propag_times.SameMinerSeqLen == i) &
+
+
+
+
+
+
+
+#  crate a data framame   with  one min. pool  for each row
+#sequences_list = block_propag_times['SameMinerSeqLen'].unique() 
+sequences_list = list(range(0,10))  #  0  means overall
+sequences = pd.DataFrame(sequences_list, columns =['SeqLen'])
+sequences.set_index('SeqLen', inplace=True)
+
+sequences = sequences.assign(mean = np.nan, median = np.nan, std = np.nan,
+    based_on_num_of_seqences = np.nan)
+
+
+for i in range(0,10):
+
+    if i == 0:
+        block_propag_times_tmp = block_propag_times[block_propag_times.PositionInsideSeq == 1]
+    else:
+        block_propag_times_tmp = block_propag_times[(block_propag_times.SameMinerSeqLen == i) &
         (block_propag_times.PositionInsideSeq == 1)]
+        
     vals = block_propag_times_tmp["InterblockTime"]#.value_counts().values
-    print("seq. length:",i, "(based on data from", sum(~np.isnan(vals)), "blocks)")
-    print("                 Average interblock time per pool",  np.nanmean(vals)  )
-    print("                 Median interblock time per pool ", np.nanmedian(vals)  )
-    print("---------")
+
+    sequences.at[i, 'mean']   = np.nanmean(vals)
+    sequences.at[i, 'median'] = np.nanmedian(vals)
+    sequences.at[i, 'std']    = np.std(vals)
+    sequences.at[i, 'based_on_num_of_seqences'] = sum(~np.isnan(vals))
+    
+
+#float to int
+sequences['based_on_num_of_seqences'] = sequences['based_on_num_of_seqences'].astype('Int32')
+
+
+#PRINT
+print("0 means ALL sequences together.")
+print(sequences)
+
+
+# print("block whitdrawing?")
+# #  for each  seq_len 1-10  check the delay between the first
+# #  blck from the sequence and the main block before ...  to see if they withdrawed or not.
+# for i in range(1,10):
+#     block_propag_times_tmp = block_propag_times[(block_propag_times.SameMinerSeqLen == i) &
+#         (block_propag_times.PositionInsideSeq == 1)]
+#     vals = block_propag_times_tmp["InterblockTime"]#.value_counts().values
+#     print("seq. length:",i, "(based on data from", sum(~np.isnan(vals)), "blocks)")
+#     print("                 Average interblock time per pool",  np.nanmean(vals)  )
+#     print("                 Median interblock time per pool ", np.nanmedian(vals)  )
+#     print("---------")
 
 
 

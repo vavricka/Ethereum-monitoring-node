@@ -67,6 +67,9 @@ counts, bin_edges = np.histogram (series_all, bins=bin_seq)
 number_of_blocks = len(blocks) # per machine
 number_of_blocks_three_machines = number_of_blocks * 3
 
+plt.title("Block propagation")
+plt.ylabel("PDF")
+
 plt.xlabel('Time since first block observation [s]')
 ax.bar (bin_edges[:-1], counts, width=0.009)
 

@@ -5,8 +5,6 @@ import os
 import gc
 from pathlib import Path
 
-#import scipy.stats as stats
-
 #save to file
 import matplotlib as mpl
 mpl.use('Agg')
@@ -43,12 +41,9 @@ blocks = pd.read_csv(BLOCKS_LOG,
     dtype=dtypes_blocks)
 
 
-
-
 #concat all propag delays as in Decker's work
 series_all_4 = pd.concat([blocks['AngainorDiff'], blocks['FalconDiff'],
     blocks['S1USDiff'],blocks['S2CNDiff']], ignore_index=True)
-
 
 #del blocks  dataframe
 del blocks
@@ -63,40 +58,48 @@ series_all_4 = np.sort(series_all_4)
 #delete first 1/4 of delays
 #because they are zero, they are from the node that
 #received the msg and thus must not be accounted
-series_all = series_all_4[len(series_all_4)//4:].copy()
+#series_all = series_all_4[len(series_all_4)//4:].copy()
+series_all = series_all_4[len(series_all_4)//4:]
+
+
+
+#  print  numbs... dbg only
+unique, counts = np.unique(series_all, return_counts=True)
+myDict = dict(zip(unique, counts))
+for k in myDict:
+    print(myDict[k], k)
+#exit(0)
+# end dbg
 
 #del series_all
-del series_all_4
-gc.collect()
+#del series_all_4
+#gc.collect()
 
 
-#density = stats.gaussian_kde(series_all)
-#n, x, _ = plt.hist(series_all, bins=len(series_all),#bins=np.linspace(-3, 3, 50), 
-#                   histtype=u'step', density=True)  
+
+n, x, _ = plt.hist(series_all, bins='fd',    #bins='auto'   'fd'  ...the same
+                   histtype=u'step', density=True, range=[0, 0.5])  
 
 fig, ax = plt.subplots()
 
-plt.hist(series_all, density=True, bins='auto')   #bins='auto'   )  #  cumulative=True
+#ok   fig2   bars...
+plt.hist(series_all, density=True, bins='fd')   #bins='auto'   'fd'  ...the same
 
-#plt.xscale('linear')
 ax.set_xlim(left=0)
 ax.set_xlim(right=0.5)
 nums = [0,0.1,0.2,0.3,0.4,0.5]
 labels = ['0','0.1','0.2','0.3','0.4','0.5']
 plt.xticks(nums, labels)
 
-#plt.plot(x, density(x))
-
 
 plt.ylabel("PDF")
 plt.xlabel('Time since first block observation [s]')
 
 
-
 #LOCAL show
 #plt.show()
 #save to file
-plt.savefig('5-1-block-propagation-time-new.pdf')
+plt.savefig('5-1-block-propagation-time-with-aprox-curve.pdf')
 
 
 

@@ -155,25 +155,30 @@ def print_bar_graph(min_pools, precision10ms):
 
     # plot
     barWidth = 0.85
-    names = ('Spa\nrkp\nool','Eth\nerm\nine','F2p\nool2','2mi\nners\nsolo','Nano\npool',
-        'Min\ning\nExpr\ness','min\ning\npool\nhub1','small\nminers\ncomb\nined',
-        '2mi\nners','xnp\nool','pand\napool') #TODO check
+    names = ('Sparkpool','Ethermine','F2pool2','2minerssolo','Nanopool',
+        'MiningExpress','Miningpoolhub1','others comb.',
+        '2miners','Xnpool','Pandapool') #TODO check
 
+
+            #'Western\nEurope', 'Central\nEurope', 'North\nAmerica', 'Western\nAsia'
 
     # Create green Bars
-    plt.bar(r, pt, color='#b5ffb9', edgecolor='white', width=barWidth, label="Portugal")
+    plt.bar(r, pt, color='#b5ffb9', edgecolor='white', width=barWidth, label="Western\nEurope")
     # Create orange Bars
-    plt.bar(r, cz, bottom=pt, color='#f9bc86', edgecolor='white', width=barWidth, label="Czechia")
+    plt.bar(r, cz, bottom=pt, color='#f9bc86', edgecolor='white', width=barWidth, label="Central\nEurope")
     # Create blue Bars
     plt.bar(r, us, bottom=[i+j for i,j in zip(pt, cz)], color='#a3acff', edgecolor='white',
-        width=barWidth, label="USA - EAST")
+        width=barWidth, label="North\nAmerica")
     # Create blue Bars
     plt.bar(r, cn, bottom=[i+j+k for i,j,k in zip(pt, cz, us)], color='#c3acff',
-        edgecolor='white', width=barWidth, label="Taiwan")
+        edgecolor='white', width=barWidth, label="Western\nAsia")
 
     # Custom x axis
-    plt.xticks(r, names)
-    #plt.xlabel("title ..")
+    plt.xticks(r, names, rotation=90)
+    #
+    plt.ylabel("First new block observation")
+    #plt.xlabel('Mining pools')
+
 
     # Add a legend
     plt.legend(loc='upper left', bbox_to_anchor=(1,1), ncol=1)

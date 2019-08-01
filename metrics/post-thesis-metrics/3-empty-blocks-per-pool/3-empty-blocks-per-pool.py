@@ -138,8 +138,8 @@ pools_selection = min_pools[   (min_pools.index != "ALL-OTHER-MINERS")  &
 
 
 
-x = ['Hiveon', 'MiningExpress', 'zhizhu', 'firepool', 'Minerall', 'uupool', 'xnpool', 'DwarfPool1', 'pandapool'
-    , 'HuoBi.pro', 'miningpoolhub1', 'Nanopool', 'f2pool2', 'Sparkpool', 'Ethermine']
+x = ['Hiveon', 'MiningExpress', 'Zhizhu', 'Firepool', 'Minerall', 'Uupool', 'Xnpool', 'DwarfPool1', 'Pandapool'
+    , 'HuoBi.pro', 'Miningpoolhub1', 'Nanopool', 'F2pool2', 'Sparkpool', 'Ethermine']
 s_pools = pools_selection.emptyVStotBlocks
 
 s_pools = np.flip(s_pools)  #, axis=None)[source]¶
@@ -149,7 +149,7 @@ x_pos = [i for i, _ in enumerate(x)]
 plt.barh(x_pos, s_pools, color='blue')
 plt.ylabel("Miners")
 plt.xlabel("Percentage of empty blocks")
-plt.title("Empty blocks of the 15 biggest mining entities")
+#plt.title("Empty blocks of the 15 biggest mining entities")
 
 plt.yticks(x_pos, x)
 

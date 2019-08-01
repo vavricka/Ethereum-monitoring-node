@@ -69,7 +69,7 @@ print("blocks:", len(blocks))
 print("first receptions:", first_receptions_sum,
     "--- (", first_receptions_sum-len(blocks), "times a new block was received on more machines at the same time)")
 
-x = ['Portugal', 'Czechia', 'USA - East', 'Taiwan']
+x = ['Western\nEurope', 'Central\nEurope', 'North\nAmerica', 'Western\nAsia']
 
 x_pos = [i for i, _ in enumerate(x)]
 bar1 = plt.barh(x_pos, first_receptions_per_instance, color='blue', xerr=[(0,0,0,0),first_receptions_per_instance_10ms])
@@ -77,9 +77,9 @@ bar1 = plt.barh(x_pos, first_receptions_per_instance, color='blue', xerr=[(0,0,0
 plt.ylabel("Instances")
 plt.xlabel("First receptions of blocks per Ethereum instance\n\
     (NTP in 90% of cases has offset under 10ms - these are shown in the error bars)")
-plt.title("Influence of geographical position on faster new block observation")
+#plt.title("Influence of geographical position on faster new block observation")
 
-plt.yticks(x_pos, x)
+plt.yticks(x_pos, x, multialignment="center")
 
 nums = [0,num_blocks/10,num_blocks/5,num_blocks*0.3,num_blocks*0.4]
 labels = ['0 %','10 %','20 %','30 %','40 %']

@@ -124,7 +124,7 @@ x = ['Ethermine', 'Sparkpool', 'F2pool2', 'Nanopool', 'Miningpoolhub1',
     'HuoBi.pro', 'Pandapool', 'DwarfPool1', 'Xnpool', 'Uupool', 'Minerall', 'Firepool',
     'Zhizhu', 'MiningExpress', 'Hiveon','Remaining pools']
 
-s_pools = pools_selection.emptyVStotBlocks
+s_pools = pools_selection.empty_blocks
 
 s_pools = np.flip(s_pools)  
 x.reverse()
@@ -133,19 +133,19 @@ x_pos = [i for i, _ in enumerate(x)]
 
 plt.barh(x_pos, s_pools, color='blue')
 plt.ylabel("Miners")
-plt.xlabel("Percentage of empty blocks")
+plt.xlabel("Total number of empty blocks")
 #plt.title("Empty blocks of the 15 biggest mining entities")
 
 plt.yticks(x_pos, x)
 
-nums = [0,0.05,0.10,0.15,0.20,0.25,0.30]
-labels = ['0 %','5 %','10 %','15 %','20 %','25 %','30 %']
+nums = [10,100,500,1000,1191]
+labels = ['10','100','500','1000','1191']
 
 plt.xticks(nums, labels)
 
 #plt.show()
 #save to file
-plt.savefig('ptm-3-empty-blcks-per-miner.pdf', bbox_inches="tight")
+plt.savefig('ptm-3-C-empty-blcks-per-miner-total-num.pdf', bbox_inches="tight")
 
 #print
 min_pools['emptyVStotBlocks'] = pd.Series(["{0:.2f}%".format(val * 100) for val in min_pools['emptyVStotBlocks']], index = min_pools.index)

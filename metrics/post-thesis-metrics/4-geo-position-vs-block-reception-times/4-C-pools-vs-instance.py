@@ -63,39 +63,33 @@ blocks = pd.read_csv(BLOCKS_LOG,
         'Difficulty','BlockSize','InterblockTime','InterblockTimePerPool'],
     dtype=dtypes_blocks_propag_times_v3)
 
+top_15_pools = ['Ethermine', 'Sparkpool', 'f2pool2', 'Nanopool', 'miningpoolhub1',
+    'HuoBi.pro', 'pandapool', 'DwarfPool1', 'xnpool', 'uupool', 'Minerall', 'firepool',
+    'zhizhu', 'MiningExpress', 'Hiveon',]
 
+# for each pool out of top-15
+# set 'MiningPool' to  "remaining" 
+blocks.loc[~blocks.MiningPool.isin(top_15_pools), 'MiningPool'] = 'remaining'
 
-#
-#
-##now only ethermine
-#ethermine_blocks = blocks[ blocks['MiningPool'] == "Ethermine" ]
-##print(ethermine_blocks["AngainorDiff"].value_counts())
-#print(len(ethermine_blocks))
-#print(len(ethermine_blocks[ethermine_blocks["AngainorDiff"] <= 0]))
-##print(len(ethermine_blocks[ethermine_blocks["AngainorDiff"] <= 0.01]))
-#print(len(ethermine_blocks[ethermine_blocks["FalconDiff"] <= 0]))
-#print(len(ethermine_blocks[ethermine_blocks["S1USDiff"] <= 0]))
-#print(len(ethermine_blocks[ethermine_blocks["S2CNDiff"] <= 0]))
-#
+ 
 
-
-
-
-
-#  crate a data framame   with  one min. pool  for each row
-min_pools_list = blocks['MiningPool'].unique() 
+#  crate a data framame with selected 15 pools (in order by power)  +  'remaining' (pools)
+min_pools_list = ['Ethermine', 'Sparkpool', 'f2pool2', 'Nanopool', 'miningpoolhub1',
+    'HuoBi.pro', 'pandapool', 'DwarfPool1', 'xnpool', 'uupool', 'Minerall', 'firepool',
+    'zhizhu', 'MiningExpress', 'Hiveon', 'remaining']
 min_pools = pd.DataFrame(min_pools_list, columns =['MiningPool'])
 min_pools.set_index('MiningPool', inplace=True)
 
+#tmp
 #print(min_pools)
+
 min_pools = min_pools.assign(
     pt = 0, cz = 0, us = 0, cn = 0,
     pt10ms = 0, cz10ms = 0, us10ms = 0, cn10ms = 0)
 
-
 for i in blocks.index:
     currentMiner = blocks.at[i,'MiningPool']
-
+    
     if blocks.at[i,'AngainorDiff'] <= 0:
         min_pools.at[currentMiner, 'pt'] = min_pools.at[currentMiner, 'pt'] + 1
     if blocks.at[i,'FalconDiff'] <= 0:
@@ -104,7 +98,6 @@ for i in blocks.index:
         min_pools.at[currentMiner, 'us'] = min_pools.at[currentMiner, 'us'] + 1
     if blocks.at[i,'S2CNDiff'] <= 0:
         min_pools.at[currentMiner, 'cn'] = min_pools.at[currentMiner, 'cn'] + 1
-
     if blocks.at[i,'AngainorDiff'] <= 0.01:
         min_pools.at[currentMiner, 'pt10ms'] = min_pools.at[currentMiner, 'pt10ms'] + 1
     if blocks.at[i,'FalconDiff'] <= 0.01:
@@ -113,10 +106,9 @@ for i in blocks.index:
         min_pools.at[currentMiner, 'us10ms'] = min_pools.at[currentMiner, 'us10ms'] + 1
     if blocks.at[i,'S2CNDiff'] <= 0.01:
         min_pools.at[currentMiner, 'cn10ms'] = min_pools.at[currentMiner, 'cn10ms'] + 1
-
-
-print(min_pools)
-
+    
+#print(min_pools)
+#exit()
 
 def print_bar_graph(min_pools, precision10ms):
     if precision10ms == False:
@@ -130,37 +122,27 @@ def print_bar_graph(min_pools, precision10ms):
         US = 'us10ms'
         CN = 'cn10ms'
 
-    #only 11 biggest pools
-    min_pools = min_pools[:11]
-
-    #  graph  for  ? 3 biggest  ppooolls
-    r = list(range(0,11))
+    #only 15 biggest pools + 1 (remaining)  = 16
+    #min_pools = min_pools[:16]  #  set 15   if you want withou REMAINING
+    r = list(range(0,16))        #  set 15   if you want withou REMAINING
 
     # From raw value to percentage
     totals = [i+j+k+l for i,j,k,l in zip(min_pools[PT].reset_index(drop=True),
         min_pools[CZ].reset_index(drop=True), min_pools[US].reset_index(drop=True),
         min_pools[CN].reset_index(drop=True))]
 
-    #TMP PRINT
-    #print("totals:", totals)
-
     pt = [i / j * 100 for i,j in zip(min_pools[PT].reset_index(drop=True), totals)]
     cz = [i / j * 100 for i,j in zip(min_pools[CZ].reset_index(drop=True), totals)]
     us = [i / j * 100 for i,j in zip(min_pools[US].reset_index(drop=True), totals)]
     cn = [i / j * 100 for i,j in zip(min_pools[CN].reset_index(drop=True), totals)]
 
-    #TMP PRINT
-    #print("pt:", pt)
-    #print("cz:", cz)
-
     # plot
     barWidth = 0.85
-    names = ('Sparkpool','Ethermine','F2pool2','2minerssolo','Nanopool',
-        'MiningExpress','Miningpoolhub1','others comb.',
-        '2miners','Xnpool','Pandapool') #TODO check
-
-
-            #'Western\nEurope', 'Central\nEurope', 'North\nAmerica', 'Western\nAsia'
+    #  todo   make correct ordering   (but first make sure  they are in order.)
+    names = ('Ethermine (25.32%)','Sparkpool (22.88%)','F2pool2 (12.75%)','Nanopool (12.10%)',
+        'Miningpoolhub1 (5.61%)', 'HuoBi.pro (1.85%)', 'Pandapool (1.82%)', 'DwarfPool1 (1.74%)',
+        'Xnpool (1.34%)', 'Uupool (1.33%)', 'Minerall (1.23%)', 'Firepool (1.22%)',
+        'Zhizhu (0.85%)', 'MiningExpress (0.81%)', 'Hiveon (0.77%)', 'Remaining miners (8.39%)')
 
     # Create green Bars
     plt.bar(r, pt, color='#b5ffb9', edgecolor='white', width=barWidth, label="Western\nEurope")
@@ -179,7 +161,6 @@ def print_bar_graph(min_pools, precision10ms):
     plt.ylabel("First new block observation")
     #plt.xlabel('Mining pools')
 
-
     # Add a legend
     plt.legend(loc='upper left', bbox_to_anchor=(1,1), ncol=1)
 
@@ -190,7 +171,6 @@ def print_bar_graph(min_pools, precision10ms):
         plt.savefig('4-c-miners-vs-our-instances-10msPrecis.pdf', bbox_inches="tight")
     else:
         plt.show()
-
 
 # False  / True    ()
 #if precision10ms == False:    --> only raw data

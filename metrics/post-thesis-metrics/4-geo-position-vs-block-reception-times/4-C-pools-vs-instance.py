@@ -7,6 +7,7 @@ from pathlib import Path
 from numpy import ma
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
+from matplotlib.pyplot import figure
 from matplotlib.ticker import FixedFormatter, FixedLocator
 
 #Set  True of False
@@ -110,6 +111,9 @@ for i in blocks.index:
 #print(min_pools)
 #exit()
 
+#set figure size
+figure(num=None, figsize=(6, 3), dpi=600, facecolor='w', edgecolor='k')
+
 def print_bar_graph(min_pools, precision10ms):
     if precision10ms == False:
         PT = 'pt'
@@ -162,6 +166,9 @@ def print_bar_graph(min_pools, precision10ms):
     #plt.xlabel('Mining pools')
 
     # Add a legend
+    #handles, labels = ax.get_legend_handles_labels()
+    #ax.legend(handles[::-1], labels[::-1], title='Line', loc='upper left')
+
     plt.legend(loc='upper left', bbox_to_anchor=(1,1), ncol=1)
 
     plt.ylim(bottom=0)

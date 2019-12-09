@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import os
 from pathlib import Path
+from matplotlib.pyplot import figure
 
 #save to file
 import matplotlib as mpl
@@ -72,6 +73,10 @@ print("first receptions:", first_receptions_sum,
 x = ['Western\nEurope', 'Central\nEurope', 'North\nAmerica', 'Western\nAsia']
 
 x_pos = [i for i, _ in enumerate(x)]
+
+#set figure size
+figure(num=None, figsize=(6, 2), dpi=600, facecolor='w', edgecolor='k')
+
 bar1 = plt.barh(x_pos, first_receptions_per_instance, color='blue', xerr=[(0,0,0,0),first_receptions_per_instance_10ms])
 
 plt.ylabel("Instances")
@@ -88,4 +93,5 @@ plt.xticks(nums, labels)
 
 #plt.show()
 #save to file
-plt.savefig('ptm-4-geo-position-vs-block-observ-time-wth-error-bars-10ms.pdf', bbox_inches="tight")
+plt.savefig('Figure-2.pdf', bbox_inches="tight")
+

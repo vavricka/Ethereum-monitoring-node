@@ -4,6 +4,8 @@ import numpy as np
 import sys
 import os
 from pathlib import Path
+from matplotlib.pyplot import figure
+
 
 import inspect
 
@@ -44,6 +46,7 @@ dtypes = {
         'CommitTime3'       : 'float',
         'CommitTime12'      : 'float',
         'CommitTime36'      : 'float',
+        'CommitTime15'      : 'float',
         }
 
 #load txs  ALL fields  #sort NOT
@@ -51,7 +54,7 @@ txs = pd.read_csv(TXS_LOG,
     names=['LocalTimeStamp','Hash','GasLimit','GasPrice','Value','Nonce','MsgType',
             'Cost','Size','To','From','ValidityErr','CapturedLocally','GasUsed',
             'InMainBlock','InUncleBlocks','InOrder','NeverCommitting',
-            'CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
+            'CommitTime0','CommitTime3','CommitTime12','CommitTime36','CommitTime15'],
             #usecols=['GasPrice','Hash','CommitTime0','CommitTime3','CommitTime12','CommitTime36'],
             usecols=['NeverCommitting','From','Nonce','InOrder','CommitTime12'],
             dtype=dtypes)
@@ -99,24 +102,28 @@ print("out of order txs:",   len(s_out_of_order))
 bin_seq = list(range(0,1000,5))   #TODO increase for 1 month last. logs (10000 good for 4-days) .. 1 000 000 ?
 fig, ax = plt.subplots()
 
+#set figure size
+#figure(num=None, figsize=(6, 2), dpi=600, facecolor='w', edgecolor='k')
+fig.set_size_inches(6,3, forward=True)
+
 counts_in, bin_edges_in = np.histogram (s_in_order, bins=bin_seq)
 cdf_in = np.cumsum (counts_in)
-linetxs0, = ax.plot (bin_edges_in[1:], cdf_in/cdf_in[-1], label='in-order')
+linetxs0, = ax.plot (bin_edges_in[1:], cdf_in/cdf_in[-1], label='in-order', linestyle='-')
 
 counts_out, bin_edges_out = np.histogram (s_out_of_order, bins=bin_seq)
 cdf_out = np.cumsum (counts_out)
-linetxs0to20, = ax.plot (bin_edges_out[1:], cdf_out/cdf_out[-1], label='out-of-order')
+linetxs0to20, = ax.plot (bin_edges_out[1:], cdf_out/cdf_out[-1], label='out-of-order', linestyle='--')
 
 
 plt.xlabel('seconds')
 plt.yticks(np.arange(0, 1.1, step=0.1),['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'])
 #
-plt.xscale('symlog')
-ax.set_xlim(left=80)
+plt.xscale('log')
+ax.set_xlim(left=90)
 ax.set_xlim(right=1000)    #TODO increase for 1 month last. logs
 #
-nums = [80,100,200,500,1000]  #TODO increase for 1 month last. logs
-labels = ['','100','200','500','1 000']   #TODO increase for 1 month last. logs
+nums = [100,200,500,1000]  #TODO increase for 1 month last. logs
+labels = ['100','200','500','1 000']   #TODO increase for 1 month last. logs
 
 plt.xticks(nums, labels)
 
@@ -134,5 +141,7 @@ ax.legend()
 #LOCAL show
 #plt.show()
 ##save to file
+
+plt.tight_layout()
 plt.savefig('5-4-Impact-of-Ordering-on-Commit-Time.pdf')
 

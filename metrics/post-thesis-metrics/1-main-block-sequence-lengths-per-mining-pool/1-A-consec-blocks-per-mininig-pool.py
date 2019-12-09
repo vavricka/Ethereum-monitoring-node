@@ -8,6 +8,8 @@ from numpy import ma
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
 from matplotlib.ticker import FixedFormatter, FixedLocator
+from matplotlib.pyplot import figure
+
 
 
 #Set  True of False
@@ -89,6 +91,7 @@ blocks.loc[blocks['Coinbase'] == "0x52E44f279f4203Dcf680395379E5F9990A69f13c", '
 blocks.loc[blocks['Coinbase'] == "0x6a7a43BE33ba930fE58F34E07D0ad6bA7ADB9B1F", 'MiningPool'] = "Coinotron"
 blocks.loc[blocks['Coinbase'] == "0x858fDEC2da9fA3CD3d97B8Bd1af98E9249D33613", 'MiningPool'] = "(0x858fDE..)"
 blocks.loc[blocks['Coinbase'] == "0x002e08000acbbaE2155Fab7AC01929564949070d", 'MiningPool'] = "2minerssolo"
+
 
 
 
@@ -314,7 +317,7 @@ def print_cdf(min_pools):
     s_f2pool2 = []
     s_Nanopool = []
     s_miningpoolhub1 = []
-    s_pandapool = []
+    s_huobi = []
 
 
     for i in range(1,11): # seq_1 to seq_10
@@ -333,12 +336,16 @@ def print_cdf(min_pools):
         num = min_pools.at['miningpoolhub1', 'seq_' + str(i)]
         s_miningpoolhub1.extend([i for j in range(num)])
 
-        num = min_pools.at['pandapool', 'seq_' + str(i)]
-        s_pandapool.extend([i for j in range(num)])
+        num = min_pools.at['HuoBi.pro', 'seq_' + str(i)]
+        s_huobi.extend([i for j in range(num)])
 
 
     bin_seq = list(range(0,11,1))
     fig, ax = plt.subplots()
+
+    #set figure size
+    #figure(num=None, figsize=(6, 3), dpi=600, facecolor='w', edgecolor='k')
+    fig.set_size_inches(6,3, forward=True)
 
     counts_ethermine, bin_edges_ethermine = np.histogram (s_ethermine, bins=bin_seq)
     cdf_ethermine = np.cumsum (counts_ethermine)
@@ -367,10 +374,10 @@ def print_cdf(min_pools):
     yaxis = [0.99999 if x == 1 else x for x in cdf_miningpoolhub1/cdf_miningpoolhub1[-1]]
     lineminingpoolhub1, = ax.plot (bin_edges_miningpoolhub1[1:], yaxis,drawstyle='steps-pre', label='Miningpoolhub1', linestyle=':')
 
-    counts_pandapool, bin_edges_pandapool = np.histogram (s_pandapool, bins=bin_seq)
-    cdf_pandapool = np.cumsum (counts_pandapool)
-    yaxis = [0.99999 if x == 1 else x for x in cdf_pandapool/cdf_pandapool[-1]]
-    linepandapool, = ax.plot (bin_edges_pandapool[1:], yaxis,drawstyle='steps-pre', label='Pandapool', linestyle='--')
+    counts_huobi, bin_edges_huobi = np.histogram (s_huobi, bins=bin_seq)
+    cdf_huobi = np.cumsum (counts_huobi)
+    yaxis = [0.99999 if x == 1 else x for x in cdf_huobi/cdf_huobi[-1]]
+    linehuobi, = ax.plot (bin_edges_huobi[1:], yaxis,drawstyle='steps-pre', label='HuoBi.pro', linestyle='--')
 
 
     plt.xlabel('Mainchain block sequence length')

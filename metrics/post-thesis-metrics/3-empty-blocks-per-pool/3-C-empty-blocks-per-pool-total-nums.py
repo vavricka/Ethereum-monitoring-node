@@ -9,6 +9,8 @@ import matplotlib as mpl
 mpl.use('Agg')
 
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+
 
 #print all columns (not to cut the tail)
 pd.set_option('display.expand_frame_repr', False)
@@ -130,6 +132,11 @@ s_pools = np.flip(s_pools)
 x.reverse()
 
 x_pos = [i for i, _ in enumerate(x)]
+
+#set figure size
+figure(num=None, figsize=(6, 3), dpi=600, facecolor='w', edgecolor='k')
+#fig.set_size_inches(6,3, forward=True)
+
 
 plt.barh(x_pos, s_pools, color='blue')
 plt.ylabel("Miners")

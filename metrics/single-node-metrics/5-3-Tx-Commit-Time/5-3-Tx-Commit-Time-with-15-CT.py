@@ -168,6 +168,8 @@ ax.legend()
 ##LOCAL show
 #plt.show()
 ##save to file
+
+plt.tight_layout()
 plt.savefig('5-3-with-15-CT-AS-WELL.pdf')
 
 

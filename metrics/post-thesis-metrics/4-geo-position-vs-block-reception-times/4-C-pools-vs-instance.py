@@ -148,15 +148,15 @@ def print_bar_graph(min_pools, precision10ms):
         'Xnpool (1.34%)', 'Uupool (1.33%)', 'Minerall (1.23%)', 'Firepool (1.22%)',
         'Zhizhu (0.85%)', 'MiningExpress (0.81%)', 'Hiveon (0.77%)', 'Remaining miners (8.39%)')
 
-    # Create green Bars
-    plt.bar(r, pt, color='#b5ffb9', edgecolor='white', width=barWidth, label="Western\nEurope")
-    # Create orange Bars
-    plt.bar(r, cz, bottom=pt, color='#f9bc86', edgecolor='white', width=barWidth, label="Central\nEurope")
-    # Create blue Bars
-    plt.bar(r, us, bottom=[i+j for i,j in zip(pt, cz)], color='#a3acff', edgecolor='white',
+
+    plt.bar(r, pt, color='#ccccca', edgecolor='white', width=barWidth, label="Western\nEurope")
+
+    plt.bar(r, cz, bottom=pt, color='#a0a09e', edgecolor='white', width=barWidth, label="Central\nEurope")
+
+    plt.bar(r, us, bottom=[i+j for i,j in zip(pt, cz)], color='#4d4d4c', edgecolor='white',
         width=barWidth, label="North\nAmerica")
-    # Create blue Bars
-    plt.bar(r, cn, bottom=[i+j+k for i,j,k in zip(pt, cz, us)], color='#c3acff',
+
+    plt.bar(r, cn, bottom=[i+j+k for i,j,k in zip(pt, cz, us)], color='#292928',
         edgecolor='white', width=barWidth, label="Western\nAsia")
 
     # Custom x axis

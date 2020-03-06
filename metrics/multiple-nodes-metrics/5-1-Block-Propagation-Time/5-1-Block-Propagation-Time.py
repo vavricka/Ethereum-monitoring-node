@@ -3,6 +3,7 @@ import numpy as np
 import sys
 import os
 from pathlib import Path
+from matplotlib.pyplot import figure
 
 #save to file
 import matplotlib as mpl
@@ -40,6 +41,8 @@ blocks = pd.read_csv(BLOCKS_LOG,
 
 bin_seq = list(np.arange(0,5,0.01))
 fig, ax = plt.subplots()
+
+fig.set_size_inches(6,3, forward=True)
 
 #concat all propag delays as in Decker's work
 series_all = pd.concat([blocks['AngainorDiff'], blocks['FalconDiff'],
@@ -139,7 +142,7 @@ for q in [50, 90, 95, 98, 99, 100]:
 #LOCAL show
 #plt.show()
 #save to file
-plt.savefig('5-1-block-propagation-time.pdf')
+plt.savefig('5-1-block-propagation-time.pdf', bbox_inches="tight")
 
 
 

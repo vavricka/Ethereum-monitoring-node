@@ -70,7 +70,7 @@ number_of_blocks_three_machines = number_of_blocks * 3
 #plt.title("Block propagation")
 plt.ylabel("PDF")
 
-plt.xlabel('Time since first block observation [s]')
+plt.xlabel('Time since first block observation [ms]')
 ax.bar (bin_edges[:-1], counts, width=0.009)
 
 
@@ -125,7 +125,7 @@ ax.set_xlim(left=0)
 ax.set_xlim(right=0.5)
 
 nums = [0,0.1,0.2,0.3,0.4,0.5]
-labels = ['0','0.1','0.2','0.3','0.4','0.5']
+labels = ['0','100','200','300','400','500']
 plt.xticks(nums, labels)
 
 print("median", np.median(series_all))

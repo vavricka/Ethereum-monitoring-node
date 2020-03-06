@@ -157,7 +157,7 @@ def print_bar_graph(min_pools, precision10ms):
         width=barWidth, label="North\nAmerica")
 
     plt.bar(r, cn, bottom=[i+j+k for i,j,k in zip(pt, cz, us)], color='#292928',
-        edgecolor='white', width=barWidth, label="Western\nAsia")
+        edgecolor='white', width=barWidth, label="Eastern\nAsia")
 
     # Custom x axis
     plt.xticks(r, names, rotation=90)

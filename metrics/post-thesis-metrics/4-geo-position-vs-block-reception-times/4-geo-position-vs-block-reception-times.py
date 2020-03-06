@@ -70,7 +70,7 @@ print("blocks:", len(blocks))
 print("first receptions:", first_receptions_sum,
     "--- (", first_receptions_sum-len(blocks), "times a new block was received on more machines at the same time)")
 
-x = ['Western\nEurope', 'Central\nEurope', 'North\nAmerica', 'Western\nAsia']
+x = ['Western\nEurope', 'Central\nEurope', 'North\nAmerica', 'Eastern\nAsia']
 
 x_pos = [i for i, _ in enumerate(x)]
 

@@ -31,11 +31,6 @@ make geth
 
 ## Running `EMC`
 
-Going through all the possible command line flags is out of scope here (please consult our
-[CLI Wiki page](https://github.com/ethereum/go-ethereum/wiki/Command-Line-Options)),
-but we've enumerated a few common parameter combos to get you up to speed quickly
-on how you can run your own `geth` instance.
-
 ### Deploy and start logging manager
 Overwrite the system rsyslog configuration with the EMC Rsyslog configuration. Then restart rsyslog
 

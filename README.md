@@ -10,7 +10,9 @@ Contains the measurement Ethereum client based on [Geth 1.8.23](https://github.c
 A Rsyslog configuration to capture logs from go-ethereum.
 
 ##### run_client.sh
-Executes the measuring instance.
+Executes the measuring instance. 
+A number of comma-separated values (CSV) log files are generated.
+These store information on transactions, blocks, connected peers and invalid messages.
 
 ##### log-pre-processing
 Contains Shell and Python scripts that process the raw logs.
@@ -31,8 +33,8 @@ make geth
 
 ## Running `EMC`
 
-### Deploy and start logging manager
-Overwrite the system rsyslog configuration with the EMC Rsyslog configuration. Then restart rsyslog
+### Deploy and start the logging manager
+Overwrite the system rsyslog configuration with the EMC Rsyslog configuration. Then restart rsyslog:
 
 ```shell
 $ cp rsyslog/rsyslog.conf /etc/rsyslog.conf
@@ -48,17 +50,19 @@ In order to stop the measurement simply kill the `geth` process.
 
 ## Metrics
 
-After a successful measurement it is needed to perform post processing of logs. 
+After a successful measurement, post processing of the logs is required. 
 One only needs to follow the instructions in `readme` files in the `log-pre-processing` folder and its subfolders.
 
 ### Log processing
 The simplyfied picture of log-processing is depicted on the diagram below:
 ![Log processing](images/flow-diagram.png)
 
-Geth stores types of logs (column 'Step-2' on the diagram). These logs are processed in several scripts (Steps 3-16).
+Geth stores types of logs (column 'Step-2' on the diagram) in a number 
+of CSV files (e.g., blocks.log and transactions.log). 
+These logs are processed in several scripts (Steps 3-16).
 
 ### Ploting results
-The `metrics` folder contains a set of python-3 scripts for plotting various metrics. Each file contains a description about of to run it.
+The `metrics` folder contains a set of python-3 scripts for plotting various metrics. Each file contains a description about how to run it.
 
 
 

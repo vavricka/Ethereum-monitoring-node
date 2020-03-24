@@ -58,7 +58,7 @@ The simplyfied picture of log-processing is depicted on the diagram below:
 ![Log processing](images/flow-diagram.png)
 
 Geth stores types of logs (column 'Step-2' on the diagram) in a number 
-of CSV files (e.g., blocks.log and transactions.log). 
+of CSV files (e.g., blocks.log and txs.log). 
 These logs are processed in several scripts (Steps 3-16).
 
 ### Ploting results

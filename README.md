@@ -1,4 +1,4 @@
-This repository contains the tool used in the paper `Impact of geo-distribution and mining pools on blockchains: a study of Ethereum` published in [DSN'2020](https://dsn2020.webs.upv.es/) - 2020 IEEE/IFIP International Conference on Dependable Systems and Networks. An author's copy of the paper is available [here](https://angainor.science/papers/dsn_ethereum.pdf)
+This repository contains the tool used in the paper `Impact of geo-distribution and mining pools on blockchains: a study of Ethereum` published in [DSN'2020](https://dsn2020.webs.upv.es/) - 2020 IEEE/IFIP International Conference on Dependable Systems and Networks. An author's copy of the paper is available [here](https://angainor.science/papers/dsn_ethereum.pdf).
 
 # Ethereum Monitoring Client (EMC)
 EMC is a platform for measuring the Ethereum network. The two main components are the modified Ethereum client (go-ethereum) and a logger (rsyslog).

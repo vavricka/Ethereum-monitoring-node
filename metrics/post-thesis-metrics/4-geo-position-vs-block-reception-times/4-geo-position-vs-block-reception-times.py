@@ -87,7 +87,7 @@ plt.xlabel("First receptions of blocks per Ethereum instance\n\
 plt.yticks(x_pos, x, multialignment="center")
 
 nums = [0,num_blocks/10,num_blocks/5,num_blocks*0.3,num_blocks*0.4]
-labels = ['0 %','10 %','20 %','30 %','40 %']
+labels = ['0%','10%','20%','30%','40%']
 
 plt.xticks(nums, labels)
 

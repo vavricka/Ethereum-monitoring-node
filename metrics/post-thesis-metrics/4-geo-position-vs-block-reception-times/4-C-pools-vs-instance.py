@@ -172,7 +172,7 @@ def print_bar_graph(min_pools, precision10ms):
     plt.legend(loc='upper left', bbox_to_anchor=(1,1), ncol=1)
 
     plt.ylim(bottom=0)
-    plt.yticks([0,25,50,75,100], ['0','25 %','50 %','75 %','100 %'])
+    plt.yticks([0,25,50,75,100], ['0','25%','50%','75%','100%'])
 
     if SAVE_TO_FILE:
         plt.savefig('4-c-miners-vs-our-instances-10msPrecis.pdf', bbox_inches="tight")
